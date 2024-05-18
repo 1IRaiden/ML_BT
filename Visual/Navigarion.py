@@ -1,4 +1,5 @@
 import networkx as nx
+import numpy as np
 from matplotlib import pyplot as plt
 import random
 
@@ -107,6 +108,14 @@ class BuildNavMap2D:
             graph_map[get_path[i]][get_path[i + 1]]['color'] = 'red'
 
 
+    def get_coordinate_path(self, graph_map, way):
+        coordinate = []
+        for wa in way:
+            position = graph_map.nodes[wa]['pos']
+            coordinate.append(position)
+        return coordinate
+
+
 class FindNavPath:
     def __init__(self):
         pass
@@ -120,6 +129,41 @@ class FindNavPath:
         return path_a_b
 
 
+class Visual:
+    def __init__(self):
+        self.fig, self.ax = plt.subplots()
+
+    def update(self, data_x, data_y):
+        self.ax.grid()
+        self.ax.scatter(data_x, data_y)
+        self.ax.set_xlim(-1, 12)
+        self.ax.set_ylim(-1, 12)
+        plt.draw()
+        plt.pause(0.05)
+        plt.cla()
+
+
+
+# Get start and end position and expand amount values for demostration
+# Perhaps, it is not need dor vehicle or drone...
+def expand_list(position : list):
+    length = len(position)
+    _x = []
+    _y = []
+    for i, (x, y) in enumerate(position, start=1):
+        if i < length:
+            end_projection = position[i]
+            data_X = np.linspace(x, end_projection[0], 11).tolist()
+            data_Y = np.linspace(y, end_projection[1], 11).tolist()
+
+            _x = _x + data_X
+            _y = _y + data_Y
+
+    return _x, _y
+
+        
+
+
 
 if __name__ == "__main__":
     nav_map = BuildNavMap2D(10, 12)
@@ -127,16 +171,28 @@ if __name__ == "__main__":
     nav_map.add_nodes(graph_map)
     nav_map.add_nav_edge(graph_map)
     nav_map.add_nav_diagonal_grid(graph_map)
-    # nav_map.add_nav_additionation_edge(graph_map, 25)
 
     nav_map.set_status_node(graph_map, 55, 'unfriendly')
     nav_map.set_status_node(graph_map, 53, 'unfriendly')
-    nav_map.set_status_node(graph_map, 53, 'unfriendly')
+
+    # fig = plt.figure(figsize= (20, 20))
+    # nav_map.draw_map_2d(graph_map, fig)
 
     path = FindNavPath()
-    way = path.find_path_A(graph_map, 11, 74)
+    vis = Visual()
 
-    nav_map.visual_path(graph_map, way)
+    # if data get in view array
+    src = [3]
+    dst = [45]
 
-    fig = plt.figure(figsize= (20, 20))
-    nav_map.draw_map_2d(graph_map, fig)
+    while True:
+        for sr, ds in zip(src, dst):
+            way = path.find_path_A(graph_map, sr, ds)
+            position = nav_map.get_coordinate_path(graph_map, way)
+            movement_x, movement_y = expand_list(position)
+
+
+            # nav_map.visual_path(graph_map, way)
+            for x, y in zip(movement_x, movement_y):
+                vis.update(x, y)
+
