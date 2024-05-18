@@ -87,6 +87,8 @@ class BuildNavMap2D:
 
     # Этот метод негативные вершины делает либо доступными, либо не доступными
     def set_status_node(self, graph_map: nx.Graph, node: int, typ: str):
+        # wrong_node = [i for i in range(99) if graph_map.nodes[i]['type'] == 'unfriendly']
+        # print(wrong_node)
         weight = 1
         graph_map.nodes[node]['type'] = typ
         neighbours = graph_map.neighbors(node)
@@ -96,10 +98,12 @@ class BuildNavMap2D:
         elif typ == 'friendly':
             self.__set_weight_edge(graph_map, node, neighbours, weight, 'blue')
 
+        print(typ)
+
     def __set_weight_edge(self, G, node, others: list[int], weight, color):
         for other in others:
             G[other][node]['weight'] = weight
-            graph_map[node][other]['color'] = color
+            G[node][other]['color'] = color
 
     # Get change color for edges
     def visual_path(self, graph_map: nx.Graph, get_path: list):
@@ -132,10 +136,10 @@ class FindNavPath:
 class Visual:
     def __init__(self):
         self.fig, self.ax = plt.subplots()
+        self.ax.grid()
 
     def update(self, data_x, data_y):
-        self.ax.grid()
-        self.ax.scatter(data_x, data_y)
+        self.ax.scatter(data_x, data_y, color = 'r')
         self.ax.set_xlim(-1, 12)
         self.ax.set_ylim(-1, 12)
         plt.draw()
@@ -143,56 +147,17 @@ class Visual:
         plt.cla()
 
 
+class AIManager:
+    def __init__(self):
+        pass
 
-# Get start and end position and expand amount values for demostration
-# Perhaps, it is not need dor vehicle or drone...
-def expand_list(position : list):
-    length = len(position)
-    _x = []
-    _y = []
-    for i, (x, y) in enumerate(position, start=1):
-        if i < length:
-            end_projection = position[i]
-            data_X = np.linspace(x, end_projection[0], 11).tolist()
-            data_Y = np.linspace(y, end_projection[1], 11).tolist()
-
-            _x = _x + data_X
-            _y = _y + data_Y
-
-    return _x, _y
-
-        
+    def set_unable_node(self):
+        node = np.random.randint(0, 99)
+        typ = random.choice(('friendly', 'unfriendly'))
+        return node, typ
 
 
 
-if __name__ == "__main__":
-    nav_map = BuildNavMap2D(10, 12)
-    graph_map = nav_map.get_graph()
-    nav_map.add_nodes(graph_map)
-    nav_map.add_nav_edge(graph_map)
-    nav_map.add_nav_diagonal_grid(graph_map)
-
-    nav_map.set_status_node(graph_map, 55, 'unfriendly')
-    nav_map.set_status_node(graph_map, 53, 'unfriendly')
-
-    # fig = plt.figure(figsize= (20, 20))
-    # nav_map.draw_map_2d(graph_map, fig)
-
-    path = FindNavPath()
-    vis = Visual()
-
-    # if data get in view array
-    src = [3]
-    dst = [45]
-
-    while True:
-        for sr, ds in zip(src, dst):
-            way = path.find_path_A(graph_map, sr, ds)
-            position = nav_map.get_coordinate_path(graph_map, way)
-            movement_x, movement_y = expand_list(position)
 
 
-            # nav_map.visual_path(graph_map, way)
-            for x, y in zip(movement_x, movement_y):
-                vis.update(x, y)
 

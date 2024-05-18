@@ -1,26 +1,78 @@
 import networkx as nx
+from Navigation import BuildNavMap2D, FindNavPath, Visual, AIManager
+import numpy as np
+from threading import Thread
+from openpyxl import Workbook
 
-class GraphPathFinder:
-    def heuristic_func(self, a, b):
-        x1, y1 = a
-        x2, y2 = b
-        return ((x1 - x2)*2 + (y1 - y2)*2)*0.5
 
-    def find_path_A(self, g: nx.Graph, node_A, node_B):
-        path_a_b = nx.astar_path(g, node_A, node_B, heuristic=self.heuristic_func)
-        return path_a_b
+def expand_list(position : list):
+    length = len(position)
+    _x = []
+    _y = []
+    for i, (x, y) in enumerate(position, start=1):
+        if i < length:
+            end_projection = position[i]
+            data_X = np.linspace(x, end_projection[0], 6).tolist()
+            data_Y = np.linspace(y, end_projection[1], 6).tolist()
 
-# Создание графа и добавление узлов в виде координатных точек
-g = nx.Graph()
-g.add_edge((0, 0), (1, 1))
-g.add_edge((1, 1), (2, 2))
-g.add_edge((2, 2), (3, 3))
+            _x = _x + data_X
+            _y = _y + data_Y
 
-finder = GraphPathFinder()
-try:
-    path = finder.find_path_A(g, (0, 0), (3, 3))
-    print("Путь между узлами:", path)
-except nx.NodeNotFound:
-    print("Один из узлов не найден в графе.")
-except nx.NetworkXNoPath:
-    print("Между узлами нет пути.")
+    return _x, _y
+
+
+def main():
+    src = np.random.randint(0, 99)
+    while True:
+        # Метод-заглушка для тестировая
+        # if src % 1 == 0:
+        #   node, typ = manager.set_unable_node()
+        #   nav_map.set_status_node(graph_map, node, typ)
+
+        # Пункт назначения определяет автоматически на рандом в данный момент
+        dst = np.random.randint(0, 99)
+        way = path.find_path_A(graph_map, src, dst)
+        position = nav_map.get_coordinate_path(graph_map, way)
+
+        #
+        movement_x, movement_y = expand_list(position)
+
+        # for x, y in zip(movement_x, movement_y):
+        #    vis.update(x, y)
+
+        src = dst
+
+
+
+if __name__ == "__main__":
+    nav_map = BuildNavMap2D(10, 12)
+    graph_map = nav_map.get_graph()
+    nav_map.add_nodes(graph_map)
+    nav_map.add_nav_edge(graph_map)
+    nav_map.add_nav_diagonal_grid(graph_map)
+
+    # vis = Visual()
+
+    manager = AIManager()
+
+
+
+    path = FindNavPath()
+    main()
+
+
+
+'''
+src = np.random.randint(0, 99)
+    while True:
+        dst = np.random.randint(0, 99)
+        way = path.find_path_A(graph_map, src, dst)
+        position = nav_map.get_coordinate_path(graph_map, way)
+        movement_x, movement_y = expand_list(position)
+
+        # nav_map.visual_path(graph_map, way)
+        for x, y in zip(movement_x, movement_y):
+            vis.update(x, y)
+
+        src = dst
+        '''
