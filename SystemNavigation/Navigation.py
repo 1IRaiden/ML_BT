@@ -30,6 +30,7 @@ class BuildNavMap2D:
     # Возможные значения типа узла:
         # friendly
         # unfriendly
+
     def add_nodes(self, graph_map):
         points = self.__get_position_node()
         for i in range(self.amount_point):
@@ -87,8 +88,6 @@ class BuildNavMap2D:
 
     # Этот метод негативные вершины делает либо доступными, либо не доступными
     def set_status_node(self, graph_map: nx.Graph, node: int, typ: str):
-        # wrong_node = [i for i in range(99) if graph_map.nodes[i]['type'] == 'unfriendly']
-        # print(wrong_node)
         weight = 1
         graph_map.nodes[node]['type'] = typ
         neighbours = graph_map.neighbors(node)
@@ -119,10 +118,20 @@ class BuildNavMap2D:
             coordinate.append(position)
         return coordinate
 
+    def find_not_comfortable_node(self, position_obstacles):
+        nodes = []
+        for pos_obstacles in position_obstacles:
+            a = round(pos_obstacles[0])
+            b = round(pos_obstacles[1])
+            node = self.position[(a, b)]
+            nodes.append(node)
+        return nodes
+
 
 class FindNavPath:
     def __init__(self):
         pass
+
     def heuristic_func(self, a, b, G):
         x1, y1 = G.nodes[a]['pos']
         x2, y2 = G.nodes[b]['pos']
@@ -147,14 +156,7 @@ class Visual:
         plt.cla()
 
 
-class AIManager:
-    def __init__(self):
-        pass
 
-    def set_unable_node(self):
-        node = np.random.randint(0, 99)
-        typ = random.choice(('friendly', 'unfriendly'))
-        return node, typ
 
 
 
