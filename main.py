@@ -1,15 +1,12 @@
 import time
-import matplotlib.pyplot as plt
-import networkx as nx
-from SystemNavigation.Navigation import BuildNavMap2D, FindNavPath, Visual
+from SystemNavigation.Navigation import BuildNavMap2D, FindNavPath
 from SystemNavigation.ManagerMovement import AIManager
 import numpy as np
-from threading import Thread
-from Vehicle.Vehicle import Car
+from ML_BT.Vehicle.Vehicle import Car
 import concurrent.futures
 
 
-def expand_list(position : list):
+def expand_list(position: list):
     length = len(position)
     _x = []
     _y = []
@@ -21,16 +18,16 @@ def expand_list(position : list):
 
             _x = _x + data_X
             _y = _y + data_Y
-
     return _x, _y
 
 
-def main(car):
-    car.set_connection('localhost', f'{8000 + car.id}')
-    time.sleep(5)
-    # car.include_arm()
+def main(game_car):
+    game_car.set_connection('localhost', f'{8000 + game_car.id}')
+    time.sleep(1)
 
+    # game_car.include_arm()
     src = np.random.randint(0, 99)
+
     while True:
         # Метод-заглушка для тестировая
         # if src % 1 == 0:
@@ -39,45 +36,50 @@ def main(car):
 
         # Пункт назначения определяет автоматически на рандом в данный момент
         dst = np.random.randint(0, 99)
-        way = path.find_path_A(graph_map, src, dst)
-        position = nav_map.get_coordinate_path(graph_map, way)
-        # print(f"Я машина {car.id} and my path: {way}")
-        # Для более детальной визуализации траектории
+        way = FindNavPath.find_path_A(graph_map, src, dst)
+        position = BuildNavMap2D.get_coordinate_path(graph_map, way)
 
         for pos in position:
-            car.get_coordinate_position()
-            car.movement(pos[0], pos[1], 0)
+            game_car.move_for_target(game_car.id, pos[0], pos[1], 0)
 
         src = dst
 
 
 if __name__ == "__main__":
     nav_map = BuildNavMap2D(10, 12)
-    graph_map = nav_map.get_graph()
+    graph_map = BuildNavMap2D.get_graph()
     nav_map.add_nodes(graph_map)
     nav_map.add_nav_edge(graph_map)
     nav_map.add_nav_diagonal_grid(graph_map)
 
-    amount_vehicle = 3
-
+    amount_vehicle = 2
     manager = AIManager()
-    path = FindNavPath()
-    # vis = Visual()
 
     # Obstacle position -- this info will be taken from data
-    pt = ((2.4, 2.6), (1.1, 1.6), (2.3, 1.4), (6.5, 7.8))
-    nodes = nav_map.find_not_comfortable_node(pt)
+    position_obstacle = AIManager.get_position_obstacle()
+    nodes = nav_map.find_not_comfortable_node(position_obstacle)
+
+    for node in nodes:
+        BuildNavMap2D.set_status_node(graph_map, node, "unfriendly")
 
     cars = []
     for i in range(amount_vehicle):
         car = Car(i)
+        car.YOUR_POSITION = manager.get_start_position_from_config()
+        AIManager.car_positions[car.id] = (car.x, car.y)
         cars.append(car)
-    fog = plt.figure(figsize=(15, 15))
-    nav_map.draw_map_2d(graph_map, fog)
-    with concurrent.futures.ThreadPoolExecutor(max_workers=amount_vehicle) as executor:
-        futures = [executor.submit(main, cars[i]) for i in range(amount_vehicle)]
-        for future in concurrent.futures.as_completed(futures):
-            print(future.result())
+
+    # fig = plt.figure(figsize=(15, 15))
+    # nav_map.draw_map_2d(graph_map, fog)
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=amount_vehicle + 1 ) as executor:
+        futures_cars = [executor.submit(main, cars[i]) for i in range(amount_vehicle)]
+        ai_sub = [executor.submit(AIManager.is_safe)]
+
+        futures = ai_sub+futures_cars
+        for future_car in concurrent.futures.as_completed(futures):
+            print(future_car.result())
+
 
 
 

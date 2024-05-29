@@ -1,16 +1,21 @@
-import concurrent.futures
-import threading
-import time
+import py_trees
 
 
-# first examples:
-def func(i):
-    print(f"Hello World{i}" +'\n')
-    time.sleep(2)
-    print(time.time())
-    return 5
+blackboard = py_trees.blackboard.Client(name="Global")
+parameters = py_trees.blackboard.Client(name="Parameters", namespace="parameters")
 
-with concurrent.futures.ThreadPoolExecutor( max_workers=5) as executor:
-    futures = [executor.submit(func, i) for i in range(5)]
-    #for future in concurrent.futures.as_completed(futures):
-     #   print(future.result())
+blackboard.register_key(key="foo", access=py_trees.common.Access.WRITE)
+blackboard.register_key(key="/bar", access=py_trees.common.Access.WRITE)
+blackboard.register_key(key="/parameters/default_speed", access=py_trees.common.Access.WRITE)
+parameters.register_key(key="aggressive_speed", access=py_trees.common.Access.WRITE)
+
+blackboard.foo = "foo"
+blackboard.bar = "bar"
+blackboard.parameters.default_speed = 20.0
+parameters.aggressive_speed = 60.0
+
+miss_daisy = blackboard.parameters.default_speed
+van_diesel = parameters.aggressive_speed
+
+print(blackboard)
+print(parameters)

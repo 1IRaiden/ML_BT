@@ -47,7 +47,7 @@ class Condition(Behaviour):
 def make_bt():
     root = Sequence(name="sequence", memory=True)
 
-    check_battery = Condition("check_batterly")
+    check_battery = Condition("check_battery")
     open_grip = Action("open_grip")
     approach_object = Action("approach_object")
     close_grip = Action("close_grip")

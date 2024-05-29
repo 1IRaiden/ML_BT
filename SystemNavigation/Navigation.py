@@ -1,5 +1,4 @@
 import networkx as nx
-import numpy as np
 from matplotlib import pyplot as plt
 import random
 
@@ -9,12 +8,13 @@ class BuildNavMap2D:
         self.LENGTH = length
         self.WIDTH = width
         self.amount_point = length*width
-        self.colors = []
+        self.colors = []    
         self.edges = []
         self.position = {}
 
     # Get empty graph
-    def get_graph(self):
+    @staticmethod
+    def get_graph():
         graph = nx.Graph()
         return graph
 
@@ -27,7 +27,7 @@ class BuildNavMap2D:
         return points
 
     # Add nodes in graph
-    # Возможные значения типа узла:
+    # Possible values of the node
         # friendly
         # unfriendly
 
@@ -36,7 +36,6 @@ class BuildNavMap2D:
         for i in range(self.amount_point):
             self.position[points[i]] = i
             graph_map.add_node(i, pos=points[i], type="friendly", weight=1)
-        print(self.position)
 
     # Add Simple edge between all nodes in from grid
     def add_nav_edge(self, graph_map):
@@ -44,7 +43,7 @@ class BuildNavMap2D:
             for j in range(0, self.WIDTH, 1):
                 count = self.WIDTH * i + j
                 if count % self.WIDTH != (self.WIDTH-1):
-                    graph_map.add_edge(count, count + 1, color='blue', weight= 1)
+                    graph_map.add_edge(count, count + 1, color='blue', weight=1)
                 if count < (self.LENGTH-1)*self.WIDTH:
                     graph_map.add_edge(count, count + self.WIDTH, color='blue', weight=1)
 
@@ -53,13 +52,14 @@ class BuildNavMap2D:
             for j in range(1, self.WIDTH-2, 1):
                 first_node = self.position[(i, j)]
                 second_node = self.position[(i+1, j+1)]
-                if i>=2:
+                if i >= 2:
                     three_node = self.position[(i-1, j+1)]
                     graph_map.add_edge(first_node, three_node, color='yellow', weight=1)
-                if i< self.LENGTH-2:
+                if i < self.LENGTH-2:
                     graph_map.add_edge(first_node, second_node, color='yellow', weight=1)
 
-    def add_nav_additionation_edge(self, graph_map: nx.Graph, amount: int):
+    # This method will be changed
+    def __add_nav_addition_edge(self, graph_map: nx.Graph, amount: int):
         i = 1
         while i <= amount:
             first = random.randint(0, self.amount_point-1)
@@ -86,32 +86,33 @@ class BuildNavMap2D:
         nx.draw(graph_map, pos, with_labels=True, edge_color=self.colors)
         plt.show()
 
-    # Этот метод негативные вершины делает либо доступными, либо не доступными
-    def set_status_node(self, graph_map: nx.Graph, node: int, typ: str):
+    # This method doing vertices or unavailable or good
+    @staticmethod
+    def set_status_node(graph_map: nx.Graph, node: int, typ: str):
         weight = 1
         graph_map.nodes[node]['type'] = typ
         neighbours = graph_map.neighbors(node)
         if typ == 'unfriendly':
             weight = 100000
-            self.__set_weight_edge(graph_map, node, neighbours, weight, 'orange')
+            BuildNavMap2D.__set_weight_edge(graph_map, node, neighbours, weight=weight, color='orange')
         elif typ == 'friendly':
-            self.__set_weight_edge(graph_map, node, neighbours, weight, 'blue')
+            BuildNavMap2D.__set_weight_edge(graph_map, node, neighbours, weight, 'blue')
 
-        print(typ)
-
-    def __set_weight_edge(self, G, node, others: list[int], weight, color):
+    @staticmethod
+    def __set_weight_edge(graph, node, others: list[int], weight, color):
         for other in others:
-            G[other][node]['weight'] = weight
-            G[node][other]['color'] = color
+            graph[other][node]['weight'] = weight
+            graph[node][other]['color'] = color
 
     # Get change color for edges
-    def visual_path(self, graph_map: nx.Graph, get_path: list):
+    @staticmethod
+    def visual_path(graph_map: nx.Graph, get_path: list):
         length_path = len(get_path)
         for i in range(0, length_path-1, 1):
             graph_map[get_path[i]][get_path[i + 1]]['color'] = 'red'
 
-
-    def get_coordinate_path(self, graph_map, way):
+    @staticmethod
+    def get_coordinate_path(graph_map, way):
         coordinate = []
         for wa in way:
             position = graph_map.nodes[wa]['pos']
@@ -132,13 +133,15 @@ class FindNavPath:
     def __init__(self):
         pass
 
-    def heuristic_func(self, a, b, G):
+    @staticmethod
+    def __heuristic_func(a, b, G):
         x1, y1 = G.nodes[a]['pos']
         x2, y2 = G.nodes[b]['pos']
         return ((x1-x2)**2+(y1-y2)**2)**0.5
 
-    def find_path_A(self, g: nx.Graph, node_A, node_B):
-        path_a_b = nx.astar_path(g, node_A, node_B, heuristic=lambda a, b: self.heuristic_func(a, b, g), weight='weight')
+    @staticmethod
+    def find_path_A(g: nx.Graph, node_A, node_B):
+        path_a_b = nx.astar_path(g, node_A, node_B, heuristic=lambda a, b: FindNavPath.__heuristic_func(a, b, g), weight='weight')
         return path_a_b
 
 
@@ -154,6 +157,53 @@ class Visual:
         plt.draw()
         plt.pause(0.05)
         plt.cla()
+
+
+
+class BuildNavMap3D:
+    def __init__(self, length=10, width=10, height=4):
+        self.LENGTH = length
+        self.WIDTH = width
+        self.HEIGHT = height
+        self.amount_point = length * width*height
+        self.colors = []
+        self.edges = []
+        self.position = {}
+
+        # Get empty graph
+
+    def get_graph(self):
+        graph = nx.Graph()
+        return graph
+
+        # Get position node for graph
+
+    def __get_position_node(self):
+        points = []
+        for y in range (0, self.HEIGHT, 1):
+            for x in range(0, self.LENGTH, 1):
+                for z in range(0, self.WIDTH, 1):
+                    points.append((x, y, z))
+        return points
+
+    def add_nodes(self, graph_map):
+        points = self.__get_position_node()
+        for i in range(self.amount_point):
+            self.position[points[i]] = i
+            graph_map.add_node(i, pos=points[i], type="friendly", weight=1)
+
+    def add_nav_edge(self, graph_map):
+        for y in range(0, self.LENGTH, 1):
+            for i in range(0, self.LENGTH, 1):
+                for j in range(0, self.WIDTH, 1):
+                    count = self.LENGTH*self.WIDTH + self.WIDTH * i + j
+                    if count % self.WIDTH != (self.WIDTH-1):
+                        graph_map.add_edge(count, count + 1, color='blue', weight= 1)
+                    if count < (self.LENGTH-1)*self.WIDTH:
+                        graph_map.add_edge(count, count + self.WIDTH, color='blue', weight=1)
+
+
+
 
 
 

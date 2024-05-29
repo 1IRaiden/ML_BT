@@ -19,7 +19,6 @@ class AloneTakeoff(Behaviour):
 
     def update(self):
         if self.first:
-            #self.logger.debug("  %s [Action::update()]" % self.name)
             self.logger.debug("Взлёт выполнен")
             self.first = not self.first
             return Status.SUCCESS
