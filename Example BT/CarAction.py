@@ -1,3 +1,4 @@
+import threading
 import time
 from py_trees.behaviour import Behaviour
 from py_trees.common import Status, OneShotPolicy
@@ -163,90 +164,128 @@ class Recharge(Behaviour):
             return Status.RUNNING
 
 
-def make_behaviour_tree():
-    # Actions
-    action_initiate = Initiate("initiate")
-    ac_initiate = de.OneShot(name='hit', child=action_initiate, policy=common.OneShotPolicy.ON_SUCCESSFUL_COMPLETION)
-
-    action_movement = Movement('movement')
-
-    action_move_target = MoveToTarget('target')
-    action_move_target_1 = MoveToTarget('target')
-
-    action_attack = Attack('attack')
-    action_attack_1 = Attack('attack_1')
-    action_attack_2 = Attack('attack_2')
-
-    action_take_cargo = TakeCargo('take')
-    action_give_cargo = GiveCargo('give')
-    action_recharge = Recharge('recharge')
-
-    action_stop = Stop('stop')
-    action_stop_1 = Stop('stop_1')
-
-    # Group free behaviour action for random positiion
-    action_order_behaviour = Parallel(name="action_order_behaviour",
-                                      policy=common.ParallelPolicy.SuccessOnSelected([action_movement]),
-                                      children=[action_movement, action_attack])
-
-    # Get plan action for take_cargo
-    action_cargo_take = Sequence(name='cargoTake', memory=True)
-    action_cargo_take.add_children([action_move_target,
-                                    action_stop,
-                                    action_take_cargo])
-
-    # Get opportunity for attack using cargo
-    action_order_behaviour_2 = Parallel(name="action_order_behaviour_2",
-                                        policy=common.ParallelPolicy.SuccessOnSelected([action_cargo_take]),
-                                        children=[action_cargo_take, action_attack_1])
-
-    # create sequence for giving cargo
-    action_cargo_give = Sequence(name='cargoGive', memory=True)
-    action_cargo_give.add_children([action_move_target_1,
-                                    action_stop_1,
-                                    action_give_cargo])
-
-    action_order_behaviour_3 = Parallel(name="action_order_behaviour_3",
-                                        policy=common.ParallelPolicy.SuccessOnSelected([action_cargo_give]),
-                                        children=[action_cargo_give, action_attack_2])
-
-    action_cargo_order = Sequence(name='order', memory=True,  children=[
-                                        action_order_behaviour_2,
-                                        action_order_behaviour_3])
-
-    # choice strategy
-    action_choice_strategy = Selector(name="choice_strategy", memory=True, children=[
-                                      action_cargo_order,
-                                      action_order_behaviour])
-
-    root = Sequence(name="sequence", memory=True)
-
-    root.add_children([
-        ac_initiate,
-        action_choice_strategy,
-    ])
-
-    return root
-
-
 def create_client():
     writer = Client(name="General")
     writer.register_key(key="is_keeper_key", access=common.Access.WRITE)
-    writer.set('is_keeper_key', False)
+    writer.set('is_keeper_key', True)
     return writer
+
+
+class Agent:
+    def __init__(self, name):
+        self.name = name
+        self.tree = BehaviourTree(self.create_behaviour_tree())
+
+    def create_behaviour_tree(self):
+        # Actions
+        action_initiate = Initiate("initiate")
+        ac_initiate = de.OneShot(name='hit', child=action_initiate,
+                                 policy=common.OneShotPolicy.ON_SUCCESSFUL_COMPLETION)
+
+        action_movement = Movement('movement')
+
+        action_move_target = MoveToTarget('target')
+        action_move_target_1 = MoveToTarget('target')
+
+        action_attack = Attack('attack')
+        action_attack_1 = Attack('attack_1')
+        action_attack_2 = Attack('attack_2')
+
+        action_take_cargo = TakeCargo('take')
+        action_give_cargo = GiveCargo('give')
+        action_recharge = Recharge('recharge')
+
+        action_stop = Stop('stop')
+        action_stop_1 = Stop('stop_1')
+
+        # Group free behaviour action for random positiion
+        action_order_behaviour = Parallel(name="action_order_behaviour",
+                                          policy=common.ParallelPolicy.SuccessOnSelected([action_movement]),
+                                          children=[action_movement, action_attack])
+
+        # Get plan action for take_cargo
+        action_cargo_take = Sequence(name='cargoTake', memory=True)
+        action_cargo_take.add_children([action_move_target,
+                                        action_stop,
+                                        action_take_cargo])
+
+        # Get opportunity for attack using cargo
+        action_order_behaviour_2 = Parallel(name="action_order_behaviour_2",
+                                            policy=common.ParallelPolicy.SuccessOnSelected([action_cargo_take]),
+                                            children=[action_cargo_take, action_attack_1])
+
+        # create sequence for giving cargo
+        action_cargo_give = Sequence(name='cargoGive', memory=True)
+        action_cargo_give.add_children([action_move_target_1,
+                                        action_stop_1,
+                                        action_give_cargo])
+
+        action_order_behaviour_3 = Parallel(name="action_order_behaviour_3",
+                                            policy=common.ParallelPolicy.SuccessOnSelected([action_cargo_give]),
+                                            children=[action_cargo_give, action_attack_2])
+
+        action_cargo_order = Sequence(name='order', memory=True, children=[
+            action_order_behaviour_2,
+            action_order_behaviour_3])
+
+        # choice strategy
+        action_choice_strategy = Selector(name="choice_strategy", memory=True, children=[
+            action_cargo_order,
+            action_order_behaviour])
+
+        root = Sequence(name="sequence", memory=True)
+
+        root.add_children([
+            ac_initiate,
+            action_choice_strategy,
+        ])
+
+        return root
+
+    def start_tick(self):
+        try:
+            while True:
+                self.tree.tick()
+                time.sleep(0.1)
+        except KeyboardInterrupt:
+            print("\n  Manual cycle interruption (Ctrl+C)")
+        finally:
+            return "Success"
 
 
 if __name__ == "__main__":
     writer = create_client()
+    amount_agents_car = 3
+    agents = []
+    threads = []
 
-    root = make_behaviour_tree()
-    tree = BehaviourTree(root)
+    for i in range(amount_agents_car):
+        agent = Agent(i)
+        agent.create_behaviour_tree()
+        agents.append(agent)
+        thread = threading.Thread(target=agent.start_tick)
+        threads.append(thread)
 
-    try:
-        while True:
-            tree.tick()
-            time.sleep(0.1)
-    except KeyboardInterrupt:
-        print("\n  Manual cycle interruption (Ctrl+C)")
+    for thread in threads:
+        thread.start()
+
+    for thread in threads:
+        thread.join()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
