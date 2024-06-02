@@ -1,6 +1,6 @@
 import time
-from SystemNavigation.Navigation import BuildNavMap2D, FindNavPath
-from SystemNavigation.ManagerMovement import AIManager
+from ML_BT.SystemNavigation.Navigation import BuildNavMap2D, FindNavPath
+from ML_BT.SystemNavigation.ManagerMovement import AIManager
 import numpy as np
 from ML_BT.Vehicle.Vehicle import Car
 import concurrent.futures

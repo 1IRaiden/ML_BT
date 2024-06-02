@@ -159,7 +159,6 @@ class Visual:
         plt.cla()
 
 
-
 class BuildNavMap3D:
     def __init__(self, length=10, width=10, height=4):
         self.LENGTH = length

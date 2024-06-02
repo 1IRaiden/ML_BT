@@ -1,7 +1,7 @@
 import time
 from pioneer_sdk import Pioneer
 from abc import ABC, abstractmethod
-from ..SystemNavigation.ManagerMovement import AIManager
+from ML_BT.SystemNavigation.ManagerMovement import AIManager
 
 
 class Vehicle(ABC):

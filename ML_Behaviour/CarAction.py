@@ -1,12 +1,12 @@
-import threading
 import time
 from py_trees.behaviour import Behaviour
 from py_trees.common import Status, OneShotPolicy
 from py_trees.composites import Sequence, Parallel, Selector
 from py_trees import common
 import py_trees.decorators as de
-from py_trees.blackboard import Client
 from py_trees.trees import BehaviourTree
+from py_trees import blackboard
+from ML_BT.ML_Behaviour.BTAgents import AIManagerBlackboard
 
 # This code get manage by car
 '''
@@ -18,7 +18,6 @@ from py_trees.trees import BehaviourTree
 - Stop
 - TakeCargo
 - GiveCargo 
-
 
     Decorators:
 1. de.OneShot - Executes the child node until the first successful completion, after which it always returns SUCCESS,
@@ -55,8 +54,6 @@ ode reaches the SUCCESS or FAILURE state. If the child node terminates,
 class Initiate(Behaviour):
     def __init__(self, name):
         super().__init__(name)
-        self.blackboard = Client(name='Traffic_Reader')
-        self.blackboard.register_key(key="light_colour", access=common.Access.READ)
 
     def update(self):
         print('checking active of car')
@@ -64,42 +61,39 @@ class Initiate(Behaviour):
 
 
 class Movement(Behaviour):
-    def __init__(self, name):
+    def __init__(self, name, is_keeper=False):
         super().__init__(name)
         self.time_movement = 10
+        self.is_keeper = is_keeper
 
     def update(self):
         time.sleep(1)
         self.time_movement -= 1
         if self.time_movement <= 0:
             self.time_movement = 5
-            print("Was come!!!!!!!")
-            return Status.SUCCESS
-        else:
-            print('Movement is Continue')
-            return Status.RUNNING
+            if self.is_keeper:
+                return Status.SUCCESS
+        # rint('Movement is Continue')
+        return Status.RUNNING
 
 
 class MoveToTarget(Behaviour):
-    def __init__(self, name):
+    def __init__(self, name, is_keeper):
         super().__init__(name)
         self.time_movement = 5
-        self.reader_keeper = Client(name='keeper_read')
-        self.reader_keeper.register_key(key="is_keeper_key", access=common.Access.READ)
+        self.is_keeper = is_keeper
 
     def update(self) -> common.Status:
-        is_has_target = self.reader_keeper.is_keeper_key
-        if is_has_target:
+        if self.is_keeper:
             time.sleep(1)
             self.time_movement -= 1
             if self.time_movement <= 0:
                 self.time_movement = 5
-                print('was target', self.time_movement )
+                print('was target', self.time_movement)
                 return Status.SUCCESS
             else:
-                print('Movement is Continue/////')
                 return Status.RUNNING
-        print("Я как-то попал сюда")
+
         return Status.FAILURE
 
 
@@ -114,17 +108,22 @@ class Stop(Behaviour):
 
 
 class Attack(Behaviour):
-    def __init__(self, name):
+    def __init__(self, name,  get_amount_patrons, update_amount_patrons, need_attack=False):
         super().__init__(name)
-        self.count = 3
+        self.amount = get_amount_patrons()
+        self.need_attack = need_attack
+        self.t = update_amount_patrons
 
     def update(self):
-        if self.count > 1:
-            # print('Attack is done')
-            self.count -= 1
+        if self.need_attack:
+            if self.amount > 1:
+                print('Attack is done')
+                self.amount -= 1
+                self.t(self.amount)
+            else:
+                print('Attack is not done')
         else:
-            ...
-            # print('Attack is not done')
+            print("attack not need")
 
         time.sleep(1)
         return Status.SUCCESS
@@ -164,14 +163,9 @@ class Recharge(Behaviour):
             return Status.RUNNING
 
 
-def create_client():
-    writer = Client(name="General")
-    writer.register_key(key="is_keeper_key", access=common.Access.WRITE)
-    writer.set('is_keeper_key', True)
-    return writer
-
-
 class Agent:
+    reader = AIManagerBlackboard().writer
+
     def __init__(self, name):
         self.name = name
         self.tree = BehaviourTree(self.create_behaviour_tree())
@@ -182,14 +176,17 @@ class Agent:
         ac_initiate = de.OneShot(name='hit', child=action_initiate,
                                  policy=common.OneShotPolicy.ON_SUCCESSFUL_COMPLETION)
 
-        action_movement = Movement('movement')
+        action_movement = Movement('movement', Agent.reader.get(f"is_keeper{self.name}_box"))
 
-        action_move_target = MoveToTarget('target')
-        action_move_target_1 = MoveToTarget('target')
+        action_move_target = MoveToTarget('target', Agent.reader.get(f"is_keeper{self.name}_box"))
+        action_move_target_1 = MoveToTarget('target', Agent.reader.get(f"is_keeper{self.name}_box"))
 
-        action_attack = Attack('attack')
-        action_attack_1 = Attack('attack_1')
-        action_attack_2 = Attack('attack_2')
+        action_attack = Attack('attack', self.get_amount_patrons, self.update_amount_patrons,
+                                 Agent.reader.get(f"attack{self.name}"))
+        action_attack_1 = Attack('attack_1', self.get_amount_patrons, self.update_amount_patrons,
+                                 Agent.reader.get(f"attack{self.name}"))
+        action_attack_2 = Attack('attack_2', self.get_amount_patrons, self.update_amount_patrons,
+                                 Agent.reader.get(f"attack{self.name}"))
 
         action_take_cargo = TakeCargo('take')
         action_give_cargo = GiveCargo('give')
@@ -198,7 +195,7 @@ class Agent:
         action_stop = Stop('stop')
         action_stop_1 = Stop('stop_1')
 
-        # Group free behaviour action for random positiion
+        # Group free behaviour action for random position
         action_order_behaviour = Parallel(name="action_order_behaviour",
                                           policy=common.ParallelPolicy.SuccessOnSelected([action_movement]),
                                           children=[action_movement, action_attack])
@@ -239,7 +236,6 @@ class Agent:
             ac_initiate,
             action_choice_strategy,
         ])
-
         return root
 
     def start_tick(self):
@@ -249,28 +245,16 @@ class Agent:
                 time.sleep(0.1)
         except KeyboardInterrupt:
             print("\n  Manual cycle interruption (Ctrl+C)")
-        finally:
-            return "Success"
+
+    def update_amount_patrons(self, new_amount):
+        Agent.reader.set(f"amount_patrons{self.name}", new_amount)
+
+    def get_amount_patrons(self):
+        return Agent.reader.get(f"amount_patrons{self.name}")
 
 
-if __name__ == "__main__":
-    writer = create_client()
-    amount_agents_car = 3
-    agents = []
-    threads = []
 
-    for i in range(amount_agents_car):
-        agent = Agent(i)
-        agent.create_behaviour_tree()
-        agents.append(agent)
-        thread = threading.Thread(target=agent.start_tick)
-        threads.append(thread)
 
-    for thread in threads:
-        thread.start()
-
-    for thread in threads:
-        thread.join()
 
 
 
