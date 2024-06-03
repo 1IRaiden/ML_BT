@@ -1,6 +1,8 @@
 import time
-
-import py_trees.trees
+import matplotlib.pyplot as plt
+import networkx
+import numpy as np
+from ML_BT.Vehicle.Vehicle import Car
 from py_trees.behaviour import Behaviour
 from py_trees.common import Status, OneShotPolicy
 from py_trees.composites import Sequence, Parallel, Selector
@@ -9,6 +11,7 @@ import py_trees.decorators as de
 from py_trees.trees import BehaviourTree
 from py_trees import blackboard
 from ML_BT.ML_Behaviour.BTAgents import AIManagerBlackboard
+from ML_BT.SystemNavigation.Navigation import BuildNavMap2D, FindNavPath
 
 
 # This code get manage by car
@@ -54,50 +57,95 @@ ode reaches the SUCCESS or FAILURE state. If the child node terminates,
 '''
 
 
+class Nav:
+    def __init__(self, nav_map):
+        self.map = nav_map
+
+
 class Initiate(Behaviour):
-    def __init__(self, name):
+    def __init__(self, name, car: Car):
         super().__init__(name)
+        self.game_car = car
 
     def update(self):
-        print('checking active of car')
+        self.game_car.set_connection('localhost', f'{8000 + self.game_car.id}')
+        time.sleep(1)
         return Status.SUCCESS
 
+        # if self.game_car.is_connected():
+        #     return Status.SUCCESS
+        # else:
+        #     time.sleep(10)
+        #     return Status.RUNNING
 
-class Movement(Behaviour):
-    def __init__(self, name, is_keeper=False):
-        super().__init__(name)
-        self.time_movement = 10
+
+class Movement(Behaviour, Nav):
+    def __init__(self, name, car: Car, graph_map, is_keeper=False):
+        Behaviour.__init__(self, name)
+        Nav.__init__(self, graph_map)
+        self.time_movement = 7
         self.is_keeper = is_keeper
+        self.game_car = car
+        self.src = 1
+        self.dst = None
+        self.real_dst = None
 
     def update(self):
-        time.sleep(1)
-        self.time_movement -= 1
-        if self.time_movement <= 0:
-            self.time_movement = 5
-            if self.is_keeper:
-                return Status.SUCCESS
-        # rint('Movement is Continue')
+        if not self.dst:
+            dst = np.random.randint(0, 99)
+            way = FindNavPath.find_path_A(self.map, self.src, dst)
+            self.src = dst
+            position = BuildNavMap2D.get_coordinate_path(self.map, way)
+            self.dst = position
+            self.real_dst = position.copy()
+
+        if self.is_keeper:
+            return Status.SUCCESS
+
+        start_time = time.time()
+        idx_max = 0
+        for i, pos in enumerate(self.dst):
+            self.game_car.move_for_target(self.game_car.id, pos[0], pos[1], 0)
+            idx_max = i
+            end_time = time.time()
+            if (end_time - start_time) > self.time_movement:
+                break
+
+        self.real_dst = self.real_dst[idx_max + 1:]
+        self.dst = self.real_dst.copy()
+
         return Status.RUNNING
 
 
-class MoveToTarget(Behaviour):
-    def __init__(self, name, is_keeper):
-        super().__init__(name)
-        self.time_movement = 5
+class MoveToTarget(Behaviour, Nav):
+    def __init__(self, name, car: Car, is_keeper: bool, graph_map, current_position: list[float] = (0, 0),
+                 target_position: list = (2, 2)):
+        Behaviour.__init__(self, name=name)
+        Nav.__init__(self, nav_map=graph_map)
+        self.game_car = car
+        self.src = current_position
         self.is_keeper = is_keeper
+        self.target_position = target_position
+        self.dst = None
+        self.real_dst = None
 
     def update(self) -> common.Status:
-        if self.is_keeper:
-            time.sleep(1)
-            self.time_movement -= 1
-            if self.time_movement <= 0:
-                self.time_movement = 5
-                print('was target', self.time_movement)
-                return Status.SUCCESS
-            else:
-                return Status.RUNNING
+        if not self.is_keeper:
+            return Status.FAILURE
 
-        return Status.FAILURE
+        src = BuildNavMap2D.get_number_node_from_position(self.src)
+        dst = BuildNavMap2D.get_number_node_from_position(self.target_position)
+
+        way = FindNavPath.find_path_A(self.map, src, dst)
+        position = BuildNavMap2D.get_coordinate_path(self.map, way)
+
+        self.dst = position
+        self.real_dst = position.copy()
+
+        if self.is_keeper:
+            for i, pos in enumerate(self.dst):
+                self.game_car.move_for_target(self.game_car.id, pos[0], pos[1], 0)
+            return Status.SUCCESS
 
 
 class Stop(Behaviour):
@@ -105,7 +153,6 @@ class Stop(Behaviour):
         super().__init__(name)
 
     def update(self):
-        print("done stop")
         time.sleep(2)
         return Status.SUCCESS
 
@@ -168,21 +215,24 @@ class Recharge(Behaviour):
 
 class Agent:
     reader = AIManagerBlackboard().writer
+    nav_map = None
 
-    def __init__(self, name):
+    def __init__(self, name, nav_map, car: Car):
+        self.game_car = car
+        Agent.nav_map = nav_map
         self.name = name
         self.tree = BehaviourTree(self.create_behaviour_tree())
 
     def create_behaviour_tree(self):
         # Actions
-        action_initiate = Initiate("initiate")
+        action_initiate = Initiate("initiate", self.game_car)
         ac_initiate = de.OneShot(name='hit', child=action_initiate,
                                  policy=common.OneShotPolicy.ON_SUCCESSFUL_COMPLETION)
 
-        action_movement = Movement('movement', Agent.reader.get(f"is_keeper{self.name}_box"))
+        action_movement = Movement('movement', self.game_car, Agent.nav_map, Agent.reader.get(f"is_keeper{self.name}_box"))
 
-        action_move_target = MoveToTarget('target', Agent.reader.get(f"is_keeper{self.name}_box"))
-        action_move_target_1 = MoveToTarget('target', Agent.reader.get(f"is_keeper{self.name}_box"))
+        action_move_target = MoveToTarget('target', self.game_car, Agent.reader.get(f"is_keeper{self.name}_box"),  Agent.nav_map)
+        action_move_target_1 = MoveToTarget('target',  self.game_car, Agent.reader.get(f"is_keeper{self.name}_box"), Agent.nav_map)
 
         action_attack = Attack('attack', self.get_amount_patrons, self.update_amount_patrons,
                                  Agent.reader.get(f"attack{self.name}"))

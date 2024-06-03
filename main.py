@@ -4,8 +4,9 @@ from ML_BT.SystemNavigation.ManagerMovement import AIManager
 import numpy as np
 from ML_BT.Vehicle.Vehicle import Car
 import concurrent.futures
+from matplotlib import pyplot as plt
 
-
+'''
 def expand_list(position: list):
     length = len(position)
     _x = []
@@ -19,6 +20,7 @@ def expand_list(position: list):
             _x = _x + data_X
             _y = _y + data_Y
     return _x, _y
+'''
 
 
 def main(game_car):
@@ -36,6 +38,7 @@ def main(game_car):
 
         # Пункт назначения определяет автоматически на рандом в данный момент
         dst = np.random.randint(0, 99)
+        print(src, dst)
         way = FindNavPath.find_path_A(graph_map, src, dst)
         position = BuildNavMap2D.get_coordinate_path(graph_map, way)
 
@@ -69,8 +72,8 @@ if __name__ == "__main__":
         AIManager.car_positions[car.id] = (car.x, car.y)
         cars.append(car)
 
-    # fig = plt.figure(figsize=(15, 15))
-    # nav_map.draw_map_2d(graph_map, fog)
+    fig = plt.figure(figsize=(15, 15))
+    nav_map.draw_map_2d(graph_map, fig)
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=amount_vehicle + 1 ) as executor:
         futures_cars = [executor.submit(main, cars[i]) for i in range(amount_vehicle)]

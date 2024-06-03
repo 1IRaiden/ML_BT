@@ -2,6 +2,20 @@ from py_trees import blackboard
 from py_trees import common
 import typing
 
+''' This class is needed to synchronize data on the blackboard, 
+since during the game we need to know about all the states of game objects
+
+main parameters: 
+1. is_keeper{amount_agents_car}_box
+2. attack{amount_agents_car}
+3. has_cargo{amount_agents_car}
+4. need_recharge{amount_agents_car}
+5. free_recharge{1}
+6. amount_patrons{amount_agents_car}
+7. dst{amount_agents_car}
+8. route{amount_agents_car}
+'''
+
 
 class AIManagerBlackboard:
     _instance = None
@@ -21,7 +35,7 @@ class AIManagerBlackboard:
     def add_all_status_cars(cls, amount_agents_car: int):
         # parament show can body get box
         cls._instance.writer.set(variable_name=f"is_keeper{amount_agents_car-3}_box", value=True)
-        cls._instance.writer.set(variable_name=f"is_keeper{amount_agents_car-2}_box", value=False)
+        cls._instance.writer.set(variable_name=f"is_keeper{amount_agents_car-2}_box", value=True)
         cls._instance.writer.set(variable_name=f"is_keeper{amount_agents_car-1}_box", value=False)
 
         # parameter show can body do attack
@@ -48,11 +62,22 @@ class AIManagerBlackboard:
         cls._instance.writer.set(variable_name=f"amount_patrons{amount_agents_car - 2}", value=3)
         cls._instance.writer.set(variable_name=f"amount_patrons{amount_agents_car - 1}", value=3)
 
-    def add_key(self, name: str = "is_keeper_key", value: typing.Any = False):
-        self.writer.set(variable_name=name, value=value)
 
-    def change_value_key_blackboard(self, key: str, value: typing.Any):
+    @classmethod
+    def add_key(cls, name: str = "is_keeper_key", value: typing.Any = False):
+        cls._instance.writer.set(variable_name=name, value=value)
+
+    @classmethod
+    def change_value_key_blackboard(cls, key: str, value: typing.Any):
         pass
+
+    @classmethod
+    def set_dst_position(cls, id_car, *args):
+        cls._instance.writer.set(variable_name=f"dst_pos{id_car}", value=None)
+
+    @classmethod
+    def set_src_position(cls, id_car, *args):
+        cls._instance.writer.set(variable_name=f"src_pos{id_car}", value=None)
 
 
 class HandlerLogic:

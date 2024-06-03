@@ -52,7 +52,7 @@ class Car(Vehicle):
         self.connect.go_to_local_point(x, y, z, 0)
         while not self.connect.point_reached():
             #if AIManager.get_event_status():
-            print("I not think", AIManager.get_event_status())
+            # print("I not think", AIManager.get_event_status())
             #if AIManager.event.is_set():
                 #self.get_coordinate_position(_id)
             time.sleep(0.3)

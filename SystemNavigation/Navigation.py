@@ -4,6 +4,8 @@ import random
 
 
 class BuildNavMap2D:
+    position = {}
+
     def __init__(self, length=10, width=10):
         self.LENGTH = length
         self.WIDTH = width
@@ -35,6 +37,7 @@ class BuildNavMap2D:
         points = self.__get_position_node()
         for i in range(self.amount_point):
             self.position[points[i]] = i
+            BuildNavMap2D.position[points[i]] = i
             graph_map.add_node(i, pos=points[i], type="friendly", weight=1)
 
     # Add Simple edge between all nodes in from grid
@@ -127,6 +130,13 @@ class BuildNavMap2D:
             node = self.position[(a, b)]
             nodes.append(node)
         return nodes
+
+    @staticmethod
+    def get_number_node_from_position(pos: list):
+        a = round(pos[0])
+        b = round(pos[1])
+        node = BuildNavMap2D.position[(a, b)]
+        return node
 
 
 class FindNavPath:
