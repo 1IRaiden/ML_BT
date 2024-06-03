@@ -48,10 +48,11 @@ class AIManagerBlackboard:
         cls._instance.writer.set(variable_name=f"amount_patrons{amount_agents_car - 2}", value=3)
         cls._instance.writer.set(variable_name=f"amount_patrons{amount_agents_car - 1}", value=3)
 
-
-
     def add_key(self, name: str = "is_keeper_key", value: typing.Any = False):
         self.writer.set(variable_name=name, value=value)
+
+    def change_value_key_blackboard(self, key: str, value: typing.Any):
+        pass
 
 
 class HandlerLogic:
