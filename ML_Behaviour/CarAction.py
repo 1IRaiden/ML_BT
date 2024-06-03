@@ -1,10 +1,8 @@
 import time
-import matplotlib.pyplot as plt
-import networkx
 import numpy as np
 from ML_BT.Vehicle.Vehicle import Car
 from py_trees.behaviour import Behaviour
-from py_trees.common import Status, OneShotPolicy
+from py_trees.common import Status
 from py_trees.composites import Sequence, Parallel, Selector
 from py_trees import common
 import py_trees.decorators as de
