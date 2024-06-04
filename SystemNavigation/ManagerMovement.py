@@ -1,13 +1,14 @@
+import json
 import random
 import threading
 import time
+import typing
 import numpy as np
+import json
 
 
 class AIManager:
     _instance = None
-    car_positions = {}
-    event = threading.Event()
 
     def __new__(cls, *args, **kwargs):
         if not cls._instance:
@@ -15,13 +16,32 @@ class AIManager:
         return cls._instance
 
     @staticmethod
-    def get_start_position_from_config():
-        start_position = (0, 0)
-        return start_position
+    def get_start_position_from_config(file: str):
+        positions = []
+        with open(file, 'r') as f:
+            data: typing.Dict = json.load(f)
+            for pos in data.values():
+                positions.append(pos)
+            return positions
 
-    @classmethod
-    def get_event_status(cls):
-        return cls.event.is_set()
+    @staticmethod
+    def get_info_about_box(path_reward: str):
+        pos_boxs = []
+        rewards = []
+        with open(path_reward, 'r') as f:
+            container = json.load(f)
+            pos_box_1 = container['box_1']
+            pos_box_2 = container['box_2']
+            pos_box_3 = container['box_3']
+            pos = [pos_box_1, pos_box_2, pos_box_3]
+            pos_boxs.extend(pos)
+
+            box_1_reward = container['reward_1']
+            box_2_reward = container['reward_2']
+            box_3_reward = container['reward_3']
+            reward = [box_1_reward, box_2_reward, box_3_reward]
+            rewards.extend(reward)
+        return pos_boxs, rewards
 
     def set_unable_node(self):
         node = np.random.randint(0, 99)
@@ -37,7 +57,6 @@ class AIManager:
 
     @classmethod
     def is_safe(cls):
-        cls.event.set()
         while True:
             # AIManager.event.clear()
             if cls.__evaluate_distance_between_object():

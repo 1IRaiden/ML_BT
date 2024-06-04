@@ -216,10 +216,16 @@ class Agent:
     nav_map = None
 
     def __init__(self, name, nav_map, car: Car):
-        self.game_car = car
+        self.game_car: Car = car
         Agent.nav_map = nav_map
         self.name = name
+        self.set_start_blackboard_position()
         self.tree = BehaviourTree(self.create_behaviour_tree())
+
+    # this method set start position for cars when creating agents
+    def set_start_blackboard_position(self):
+        AIManagerBlackboard.add_key(f"car_start_position{self.name}", self.game_car.YOUR_POSITION)
+        # print(Agent.reader.get(f"car_start_position{self.name}"))
 
     def create_behaviour_tree(self):
         # Actions

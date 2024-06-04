@@ -14,6 +14,9 @@ main parameters:
 6. amount_patrons{amount_agents_car}
 7. dst{amount_agents_car}
 8. route{amount_agents_car}
+9. pos_box{number}
+10. car_start_position{number}
+
 '''
 
 
@@ -33,38 +36,28 @@ class AIManagerBlackboard:
 
     @classmethod
     def add_all_status_cars(cls, amount_agents_car: int):
-        # parament show can body get box
-        cls._instance.writer.set(variable_name=f"is_keeper{amount_agents_car-3}_box", value=True)
-        cls._instance.writer.set(variable_name=f"is_keeper{amount_agents_car-2}_box", value=True)
-        cls._instance.writer.set(variable_name=f"is_keeper{amount_agents_car-1}_box", value=False)
+        for i in range(amount_agents_car):
+            # parament show can body get box
+            cls._instance.writer.set(variable_name=f"is_keeper{i}_box", value=False)
 
-        # parameter show can body do attack
-        cls._instance.writer.set(variable_name=f"attack{amount_agents_car - 3}", value=True)
-        cls._instance.writer.set(variable_name=f"attack{amount_agents_car - 2}", value=True)
-        cls._instance.writer.set(variable_name=f"attack{amount_agents_car - 1}", value=False)
+            # parameter show can body do attack
+            cls._instance.writer.set(variable_name=f"attack{i}", value=True)
 
-        # parameter show has body box or not
-        cls._instance.writer.set(variable_name=f"has_cargo{amount_agents_car - 3}", value=False)
-        cls._instance.writer.set(variable_name=f"has_cargo{amount_agents_car - 2}", value=False)
-        cls._instance.writer.set(variable_name=f"has_cargo{amount_agents_car - 1}", value=False)
+            # parameter show has body box or not
+            cls._instance.writer.set(variable_name=f"has_cargo{i}", value=False)
 
-        # parameters show need body recharge or not
-        cls._instance.writer.set(variable_name=f"need_recharge{amount_agents_car - 3}", value=False)
-        cls._instance.writer.set(variable_name=f"need_recharge{amount_agents_car - 2}", value=False)
-        cls._instance.writer.set(variable_name=f"need_recharge{amount_agents_car - 1}", value=False)
+            # parameters show need body recharge or not
+            cls._instance.writer.set(variable_name=f"need_recharge{i}", value=False)
 
-        # parameters show have free recharge or not
+            # parameters show how many patron have
+            cls._instance.writer.set(variable_name=f"amount_patrons{i}", value=3)
+
+            # parameters show have free recharge or not
         cls._instance.writer.set(variable_name=f"free_recharge{1}", value=False)
         cls._instance.writer.set(variable_name=f"free_recharge{2}", value=False)
 
-        # parameters show how many patron have
-        cls._instance.writer.set(variable_name=f"amount_patrons{amount_agents_car - 3}", value=3)
-        cls._instance.writer.set(variable_name=f"amount_patrons{amount_agents_car - 2}", value=3)
-        cls._instance.writer.set(variable_name=f"amount_patrons{amount_agents_car - 1}", value=3)
-
-
     @classmethod
-    def add_key(cls, name: str = "is_keeper_key", value: typing.Any = False):
+    def add_key(cls, name: str, value: typing.Any = False):
         cls._instance.writer.set(variable_name=name, value=value)
 
     @classmethod
@@ -78,6 +71,7 @@ class AIManagerBlackboard:
     @classmethod
     def set_src_position(cls, id_car, *args):
         cls._instance.writer.set(variable_name=f"src_pos{id_car}", value=None)
+
 
 
 class HandlerLogic:

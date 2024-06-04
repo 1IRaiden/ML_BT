@@ -7,6 +7,8 @@ from ML_BT.Vehicle.Vehicle import Car
 from ML_BT.ML_Behaviour.CarAction import Nav
 
 
+path = 'Example BT/config.json'
+
 if __name__ == "__main__":
     # Initialization map
     nav_map = BuildNavMap2D(10, 12)
@@ -25,18 +27,17 @@ if __name__ == "__main__":
     amount_agents_car = 3
     ai = AIManagerBlackboard()
     ai.add_all_status_cars(amount_agents_car)
+
     agents = []
     threads = []
 
     manager = AIManager()
-
-    # cars = []
+    start_positions = manager.get_start_position_from_config(path)
 
     for i in range(amount_agents_car):
         car = Car(i)
-        car.YOUR_POSITION = manager.get_start_position_from_config()
-        AIManager.car_positions[car.id] = (car.x, car.y)
-        # cars.append(car)
+        car.YOUR_POSITION = start_positions[i]
+
         agent = CarAction.Agent(i, graph_map, car)
         agent.create_behaviour_tree()
         agents.append(agent)
