@@ -16,6 +16,7 @@ main parameters:
 8. route{amount_agents_car}
 9. pos_box{number}
 10. car_start_position{number}
+11. reward_box{i}
 
 '''
 
@@ -38,10 +39,10 @@ class AIManagerBlackboard:
     def add_all_status_cars(cls, amount_agents_car: int):
         for i in range(amount_agents_car):
             # parament show can body get box
-            cls._instance.writer.set(variable_name=f"is_keeper{i}_box", value=False)
+            cls._instance.writer.set(variable_name=f"is_keeper{i}_box", value=True)
 
             # parameter show can body do attack
-            cls._instance.writer.set(variable_name=f"attack{i}", value=True)
+            cls._instance.writer.set(variable_name=f"attack{i}", value=False)
 
             # parameter show has body box or not
             cls._instance.writer.set(variable_name=f"has_cargo{i}", value=False)
@@ -56,13 +57,14 @@ class AIManagerBlackboard:
         cls._instance.writer.set(variable_name=f"free_recharge{1}", value=False)
         cls._instance.writer.set(variable_name=f"free_recharge{2}", value=False)
 
+
     @classmethod
     def add_key(cls, name: str, value: typing.Any = False):
         cls._instance.writer.set(variable_name=name, value=value)
 
     @classmethod
     def change_value_key_blackboard(cls, key: str, value: typing.Any):
-        pass
+        cls._instance.writer.set(variable_name= key, value= value)
 
     @classmethod
     def set_dst_position(cls, id_car, *args):
@@ -72,6 +74,9 @@ class AIManagerBlackboard:
     def set_src_position(cls, id_car, *args):
         cls._instance.writer.set(variable_name=f"src_pos{id_car}", value=None)
 
+    @classmethod
+    def get_value_key_blackboard(cls, key: str) -> typing.Any:
+        return cls._instance.writer.get(key)
 
 
 class HandlerLogic:

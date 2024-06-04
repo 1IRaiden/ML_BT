@@ -1,10 +1,10 @@
-import json
 import random
 import threading
 import time
 import typing
 import numpy as np
 import json
+from ML_BT.ML_Behaviour.BTAgents import AIManagerBlackboard
 
 
 class AIManager:
@@ -14,6 +14,19 @@ class AIManager:
         if not cls._instance:
             cls._instance = super(AIManager, cls).__new__(cls, *args, *kwargs)
         return cls._instance
+
+    def start_manager(self, path, ai_blackboard: AIManagerBlackboard):
+        # time.sleep(10)
+        while True:
+            pos_boxs, rewards = AIManager.get_info_about_box(path)
+
+            for i, pos_box in enumerate(pos_boxs, start=1):
+                ai_blackboard.add_key(f"pos_box{i}", pos_box)
+
+            for i, reward in enumerate(rewards, start=1):
+                ai_blackboard.add_key(f"reward_box{i}", reward)
+
+            time.sleep(2)
 
     @staticmethod
     def get_start_position_from_config(file: str):
@@ -30,9 +43,9 @@ class AIManager:
         rewards = []
         with open(path_reward, 'r') as f:
             container = json.load(f)
-            pos_box_1 = container['box_1']
-            pos_box_2 = container['box_2']
-            pos_box_3 = container['box_3']
+            pos_box_1 = container['pos_box_1']
+            pos_box_2 = container['pos_box_2']
+            pos_box_3 = container['pos_box_3']
             pos = [pos_box_1, pos_box_2, pos_box_3]
             pos_boxs.extend(pos)
 

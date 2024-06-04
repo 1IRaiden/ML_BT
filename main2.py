@@ -4,10 +4,10 @@ from ML_BT.ML_Behaviour.BTAgents import AIManagerBlackboard
 from ML_BT.SystemNavigation.ManagerMovement import AIManager
 from ML_BT.SystemNavigation.Navigation import BuildNavMap2D, FindNavPath
 from ML_BT.Vehicle.Vehicle import Car
-from ML_BT.ML_Behaviour.CarAction import Nav
 
 
 path = 'Example BT/config.json'
+path_box = r'C:\Users\user\Desktop\Проекты\MachineLeaning\MachineLearning\ML_BT\Example BT\config_box.json'
 
 if __name__ == "__main__":
     # Initialization map
@@ -32,7 +32,13 @@ if __name__ == "__main__":
     threads = []
 
     manager = AIManager()
+
+    # This thread will be follow game and do request on server
+    ai_thread = threading.Thread(target=manager.start_manager, args=(path_box, ai))
+    ai_thread.start()
+
     start_positions = manager.get_start_position_from_config(path)
+    print(start_positions)
 
     for i in range(amount_agents_car):
         car = Car(i)

@@ -89,6 +89,7 @@ class Movement(Behaviour, Nav):
         self.real_dst = None
 
     def update(self):
+        print("Что за фигня")
         if not self.dst:
             dst = np.random.randint(0, 99)
             way = FindNavPath.find_path_A(self.map, self.src, dst)
@@ -116,23 +117,35 @@ class Movement(Behaviour, Nav):
 
 
 class MoveToTarget(Behaviour, Nav):
-    def __init__(self, name, car: Car, is_keeper: bool, graph_map, current_position: list[float] = (0, 0),
-                 target_position: list = (2, 2)):
+    def __init__(self, name, car: Car, is_keeper: bool, graph_map, current_position: list[float] = (0, 0)):
         Behaviour.__init__(self, name=name)
         Nav.__init__(self, nav_map=graph_map)
         self.game_car = car
         self.src = current_position
         self.is_keeper = is_keeper
-        self.target_position = target_position
+        self.has_cargo = False
         self.dst = None
         self.real_dst = None
+        self.target_position = None
 
     def update(self) -> common.Status:
         if not self.is_keeper:
             return Status.FAILURE
 
-        src = BuildNavMap2D.get_number_node_from_position(self.src)
-        dst = BuildNavMap2D.get_number_node_from_position(self.target_position)
+        src = None
+        dst = None
+        if not self.dst:
+            self.has_cargo = AIManagerBlackboard.get_value_key_blackboard(F'has_cargo{self.game_car.id}')
+            if not self.has_cargo:
+                self.target_position = AIManagerBlackboard.get_value_key_blackboard("pos_box2")
+                print("Stake")
+            else:
+                self.target_position = self.game_car.YOUR_POSITION
+                print("Mistake")
+
+            src = BuildNavMap2D.get_number_node_from_position(self.src)
+            dst = BuildNavMap2D.get_number_node_from_position(self.target_position)
+            print(src, dst)
 
         way = FindNavPath.find_path_A(self.map, src, dst)
         position = BuildNavMap2D.get_coordinate_path(self.map, way)
@@ -143,6 +156,8 @@ class MoveToTarget(Behaviour, Nav):
         if self.is_keeper:
             for i, pos in enumerate(self.dst):
                 self.game_car.move_for_target(self.game_car.id, pos[0], pos[1], 0)
+                self.src = (pos[0], pos[1])
+            self.dst = []
             return Status.SUCCESS
 
 
@@ -178,22 +193,26 @@ class Attack(Behaviour):
 
 
 class TakeCargo(Behaviour):
-    def __init__(self, name):
+    def __init__(self, name, car):
         super().__init__(name)
+        self.game_car = car
 
     def update(self):
         time.sleep(1)
         print('Cargo is taken')
+        AIManagerBlackboard.change_value_key_blackboard(f"has_cargo{self.game_car.id}", True)
         return Status.SUCCESS
 
 
 class GiveCargo(Behaviour):
-    def __init__(self, name):
+    def __init__(self, name, car):
         super().__init__(name)
+        self.game_car = car
 
     def update(self):
         time.sleep(1)
         print('Cargo is given')
+        AIManagerBlackboard.change_value_key_blackboard(f"has_cargo{self.game_car.id}", False)
         return Status.SUCCESS
 
 
@@ -245,8 +264,8 @@ class Agent:
         action_attack_2 = Attack('attack_2', self.get_amount_patrons, self.update_amount_patrons,
                                  Agent.reader.get(f"attack{self.name}"))
 
-        action_take_cargo = TakeCargo('take')
-        action_give_cargo = GiveCargo('give')
+        action_take_cargo = TakeCargo('take', self.game_car)
+        action_give_cargo = GiveCargo('give', self.game_car)
         action_recharge = Recharge('recharge')
 
         action_stop = Stop('stop')
