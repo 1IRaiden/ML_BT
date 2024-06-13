@@ -2,6 +2,7 @@ import time
 from pioneer_sdk import Pioneer
 from abc import ABC, abstractmethod
 from ML_BT.SystemNavigation.ManagerMovement import AIManager
+from ML_BT.Vehicle.edubot_sdk import EdubotGCS
 
 
 class Vehicle(ABC):
@@ -69,6 +70,31 @@ class Car(Vehicle):
             pass
         finally:
             time.sleep(0.1)
+
+
+class Drone(Vehicle):
+    def __init__(self):
+        super().__init__()
+        self.connect: EdubotGCS = ...
+
+    def set_connection(self, ip, port):
+        try:
+            self.connect = EdubotGCS(ip=ip, mavlink_port=port)
+        except Exception:
+            print("Не удалось подключиться к машинке")
+
+    def is_connected(self) -> bool:
+        if not self.connect:
+            return False
+        else:
+            return True
+
+    def include_arm(self):
+        time.sleep(1)
+
+    def move_for_target(self, _id, x, y=0, z=0):
+        self.connect.go_to_local_point(x=x, y=y)
+
 
 
 

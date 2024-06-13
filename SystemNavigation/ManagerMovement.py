@@ -1,5 +1,4 @@
 import random
-import threading
 import time
 import typing
 import numpy as np
@@ -19,6 +18,11 @@ class AIManager:
         # time.sleep(10)
         while True:
             pos_boxs, rewards = AIManager.get_info_about_box(path)
+            current_positions = AIManager.get_current_position_cars("Example BT/current_positions.json")
+
+            for i, current_position in enumerate(current_positions):
+                ai_blackboard.add_key(f"car_current_position{i}", current_position)
+            AIManager.is_safe(current_positions)
 
             for i, pos_box in enumerate(pos_boxs, start=1):
                 ai_blackboard.add_key(f"pos_box{i}", pos_box)
@@ -56,28 +60,31 @@ class AIManager:
             rewards.extend(reward)
         return pos_boxs, rewards
 
-    def set_unable_node(self):
+    @staticmethod
+    def get_current_position_cars(js_file):
+        current_positions = []
+        with open(js_file, 'r') as f:
+            all_pos = json.load(f)
+            pos_curr_car_1 = all_pos["current_position_car_1"]
+            pos_curr_car_2 = all_pos["current_position_car_2"]
+            pos_curr_car_3 = all_pos["current_position_car_3"]
+            po_currents = [pos_curr_car_1, pos_curr_car_2, pos_curr_car_3]
+            current_positions.extend(po_currents)
+        return current_positions
+
+    @staticmethod
+    def set_unable_node():
         node = np.random.randint(0, 99)
         typ = random.choice(('friendly', 'unfriendly'))
         return node, typ
 
     @classmethod
-    def update_position_cars(cls, _id, x, y):
-        AIManager.car_positions[_id] = (x, y)
-
-    def get_position_players(self):
-        pass
-
-    @classmethod
-    def is_safe(cls):
-        while True:
-            # AIManager.event.clear()
-            if cls.__evaluate_distance_between_object():
-                pass
-            else:
-                print("situation not safe")
-            time.sleep(2)
-            print(cls.event.is_set())
+    def is_safe(cls, currents_position):
+        if cls.__evaluate_distance_between_object(currents_position):
+            return
+        else:
+            # Логика изменения координат
+            print("situation not safe")
 
     @staticmethod
     def get_position_obstacle():
@@ -85,14 +92,16 @@ class AIManager:
         return pos_obstacle
 
     @classmethod
-    def __evaluate_distance_between_object(cls) -> bool:
-        coordinates = list(cls.car_positions.values())
-        points = np.array(coordinates, dtype=np.float32)
+    def __evaluate_distance_between_object(cls, currents_position) -> bool:
+        points = np.array(currents_position, dtype=np.float32)
         dist_matrix = np.linalg.norm(points[:, np.newaxis, :] - points[np.newaxis, :, :], axis=2)
-        if np.all(dist_matrix > 0.5):
-            return True
-        else:
-            return False
+
+        for i in range(len(dist_matrix)):
+            for j in range(len(dist_matrix[i])):
+                if i != j:
+                    if dist_matrix[i][j] < 0.5:
+                        return False
+        return True
 
 
 

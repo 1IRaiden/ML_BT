@@ -17,6 +17,7 @@ main parameters:
 9. pos_box{number}
 10. car_start_position{number}
 11. reward_box{i}
+12. car_current_position{i}
 
 '''
 
@@ -39,7 +40,7 @@ class AIManagerBlackboard:
     def add_all_status_cars(cls, amount_agents_car: int):
         for i in range(amount_agents_car):
             # parament show can body get box
-            cls._instance.writer.set(variable_name=f"is_keeper{i}_box", value=True)
+            cls._instance.writer.set(variable_name=f"is_keeper{i}_box", value=False)
 
             # parameter show can body do attack
             cls._instance.writer.set(variable_name=f"attack{i}", value=False)
@@ -57,7 +58,6 @@ class AIManagerBlackboard:
         cls._instance.writer.set(variable_name=f"free_recharge{1}", value=False)
         cls._instance.writer.set(variable_name=f"free_recharge{2}", value=False)
 
-
     @classmethod
     def add_key(cls, name: str, value: typing.Any = False):
         cls._instance.writer.set(variable_name=name, value=value)
@@ -67,11 +67,11 @@ class AIManagerBlackboard:
         cls._instance.writer.set(variable_name= key, value= value)
 
     @classmethod
-    def set_dst_position(cls, id_car, *args):
+    def set_dst_position(cls, id_car):
         cls._instance.writer.set(variable_name=f"dst_pos{id_car}", value=None)
 
     @classmethod
-    def set_src_position(cls, id_car, *args):
+    def set_src_position(cls, id_car):
         cls._instance.writer.set(variable_name=f"src_pos{id_car}", value=None)
 
     @classmethod

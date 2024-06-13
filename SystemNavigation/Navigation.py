@@ -109,7 +109,7 @@ class BuildNavMap2D:
 
     # Get change color for edges
     @staticmethod
-    def visual_path(graph_map: nx.Graph, get_path: list):
+    def __visual_path(graph_map: nx.Graph, get_path: list):
         length_path = len(get_path)
         for i in range(0, length_path-1, 1):
             graph_map[get_path[i]][get_path[i + 1]]['color'] = 'red'

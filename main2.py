@@ -1,4 +1,5 @@
 import threading
+import time
 from ML_Behaviour import CarAction, BTAgents
 from ML_BT.ML_Behaviour.BTAgents import AIManagerBlackboard
 from ML_BT.SystemNavigation.ManagerMovement import AIManager
@@ -38,7 +39,6 @@ if __name__ == "__main__":
     ai_thread.start()
 
     start_positions = manager.get_start_position_from_config(path)
-    print(start_positions)
 
     for i in range(amount_agents_car):
         car = Car(i)
