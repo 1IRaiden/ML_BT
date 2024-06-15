@@ -183,6 +183,7 @@ class Visual:
 
 class BuildNavMap3D:
     position = {}
+
     def __init__(self, length=10, width=10, height=4):
         self.LENGTH = length
         self.WIDTH = width
@@ -258,7 +259,6 @@ class BuildNavMap3D:
                             vertical_bz = self.position[(x - 1, y - 1, h + 1)]
                             graph_map.add_edge(vertical_az, vertical_bz)
 
-
     @staticmethod
     def get_number_node_from_position(pos: list):
         a = round(pos[0])
@@ -279,32 +279,6 @@ class BuildNavMap3D:
             coordinate.append(position)
         return coordinate
 
-
-if __name__ == '__main__':
-    nav_map = BuildNavMap3D(10, 10, 4)
-    graph_map = BuildNavMap3D.get_graph()
-    nav_map.add_nodes(graph_map)
-    nav_map.add_nav_edge(graph_map)
-    nav_map.add_nav_diagonal_grid(graph_map)
-
-    way = FindNavPath.find_path_A_3D(graph_map, 1, 233)
-    position = BuildNavMap3D.get_coordinate_path(graph_map, way)
-
-    fir = plt.figure(figsize=(10, 10))
-    ax = fir.add_subplot(projection='3d')
-
-    for i in range(len(position)-1):
-        x =[position[i][0], position[i + 1][0]]
-        y =[position[i][1], position[i + 1][1]]
-        z =[position[i][2], position[i + 1][2]]
-        ax.plot(x, y, z)
-
-    print(position)
-    plt.xlim(0, 10)
-    plt.ylim(0, 4)
-    t2 = time.time()
-
-    plt.show()
 
 
 
