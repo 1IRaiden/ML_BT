@@ -38,9 +38,12 @@ class Drone(Vehicle):
 
     def set_connection(self, ip, port):
         self.connect: Pioneer = Pioneer(ip=ip, mavlink_port=port, logger=False)
+        print("Success")
 
     def takeoff(self):
         self.connect.takeoff()
+        print("Взлет")
+        time.sleep(2)
 
     def land(self):
         self.connect.land()

@@ -1,0 +1,2 @@
+HAS_CARS_IN_GAMES = True
+HAS_DRONE_IN_GAME = False

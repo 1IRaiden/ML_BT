@@ -10,7 +10,7 @@ from py_trees.trees import BehaviourTree
 from py_trees import blackboard
 from pioneer_sdk import Pioneer
 from ML_BT.ML_Behaviour.BTAgents import AIManagerBlackboard
-from ML_BT.SystemNavigation.Navigation import BuildNavMap2D, FindNavPath
+from ML_BT.SystemNavigation.Navigation import BuildNavMap2D, FindNavPath, BuildNavMap3D
 
 
 class Nav3D:
@@ -36,8 +36,10 @@ class TakeOff(Behaviour):
         self.drone = drone
 
     def update(self) -> common.Status:
-        self.drone.takeoff()
-        time.sleep(2)
+        if not False:
+            self.drone.takeoff()
+            time.sleep(2)
+
         return Status.SUCCESS
 
 
@@ -57,17 +59,17 @@ class MovementDr(Behaviour, Nav3D):
         Nav3D.__init__(self, graph_map)
         self.time_movement = 7
         self.is_keeper = is_keeper
-        self.drone = drone
+        self.game_car = drone
         self.src = 1
         self.dst = None
         self.real_dst = None
 
     def update(self):
         if not self.dst:
-            dst = np.random.randint(0, 99)
-            way = FindNavPath.find_path_A(self.map, self.src, dst)
+            dst = np.random.randint(0, 400)
+            way = FindNavPath.find_path_A_3D(self.map, self.src, dst)
             self.src = dst
-            position = BuildNavMap2D.get_coordinate_path(self.map, way)
+            position = BuildNavMap3D.get_coordinate_path(self.map, way)
             self.dst = position
             self.real_dst = position.copy()
 
@@ -77,7 +79,7 @@ class MovementDr(Behaviour, Nav3D):
         start_time = time.time()
         idx_max = 0
         for i, pos in enumerate(self.dst):
-            self.drone.move_for_target(self.drone.id, pos[0], pos[1], 0)
+            self.game_car.move_for_target(self.game_car.id, pos[0], pos[1], pos[2])
             idx_max = i
             end_time = time.time()
             if (end_time - start_time) > self.time_movement:
@@ -89,11 +91,11 @@ class MovementDr(Behaviour, Nav3D):
         return Status.RUNNING
 
 
-class MoveToTarget(Behaviour, Nav3D):
+class MoveToTargetDr(Behaviour, Nav3D):
     def __init__(self, name, drone: Drone, is_keeper: bool, graph_map, current_position: list[float] = (0, 0)):
         Behaviour.__init__(self, name=name)
         Nav3D.__init__(self, nav_map=graph_map)
-        self.drone = drone
+        self.game_car = drone
         self.src = current_position
         self.is_keeper = is_keeper
         self.has_cargo = False
@@ -111,26 +113,26 @@ class MoveToTarget(Behaviour, Nav3D):
             if not self.has_cargo:
                 self.target_position = AIManagerBlackboard.get_value_key_blackboard("pos_box2")
             else:
-                self.target_position = self.drone.YOUR_POSITION
+                self.target_position = self.game_car.YOUR_POSITION
 
-            src = BuildNavMap2D.get_number_node_from_position(self.src)
-            dst = BuildNavMap2D.get_number_node_from_position(self.target_position)
+            src = BuildNavMap3D.get_number_node_from_position(self.src)
+            dst = BuildNavMap3D.get_number_node_from_position(self.target_position)
             print(src, dst)
 
-        way = FindNavPath.find_path_A(self.map, src, dst)
-        position = BuildNavMap2D.get_coordinate_path(self.map, way)
+        way = FindNavPath.find_path_A_3D(self.map, src, dst)
+        position = BuildNavMap3D.get_coordinate_path(self.map, way)
 
         self.dst = position
 
         if self.is_keeper:
             for i, pos in enumerate(self.dst):
-                self.drone.move_for_target(self.drone.id, pos[0], pos[1], 0)
-                self.src = (pos[0], pos[1])
+                self.game_car.move_for_target(self.game_car.id, pos[0], pos[1], pos[2])
+                self.src = (pos[0], pos[1], pos[2])
             self.dst = []
             return Status.SUCCESS
 
 
-class Stop(Behaviour):
+class StopDr(Behaviour):
     def __init__(self, name):
         super().__init__(name)
 
@@ -139,7 +141,7 @@ class Stop(Behaviour):
         return Status.SUCCESS
 
 
-class Attack(Behaviour):
+class AttackDr(Behaviour):
     def __init__(self, name,  get_amount_patrons, update_amount_patrons,
                  need_attack=False):
         super().__init__(name)
@@ -162,7 +164,7 @@ class Attack(Behaviour):
         return Status.SUCCESS
 
 
-class TakeCargo(Behaviour):
+class TakeCargDr(Behaviour):
     def __init__(self, name, car):
         super().__init__(name)
         self.game_car = car
@@ -174,7 +176,7 @@ class TakeCargo(Behaviour):
         return Status.SUCCESS
 
 
-class GiveCargo(Behaviour):
+class GiveCargoDr(Behaviour):
     def __init__(self, name, drone: Drone):
         super().__init__(name)
         self.drone = drone
@@ -198,3 +200,5 @@ class Recharge(Behaviour):
             return Status.SUCCESS
         else:
             return Status.RUNNING
+
+

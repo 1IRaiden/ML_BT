@@ -182,6 +182,7 @@ class Visual:
 
 
 class BuildNavMap3D:
+    position = {}
     def __init__(self, length=10, width=10, height=4):
         self.LENGTH = length
         self.WIDTH = width
@@ -212,6 +213,7 @@ class BuildNavMap3D:
         points = self.__get_position_node()
         for i in range(self.amount_point):
             self.position[points[i]] = i
+            BuildNavMap3D.position[points[i]] = i
             graph_map.add_node(i, pos=points[i], type="friendly", weight=1)
 
     def add_nav_edge(self, graph_map):
@@ -255,6 +257,15 @@ class BuildNavMap3D:
                             vertical_az = self.position[(x, y, h)]
                             vertical_bz = self.position[(x - 1, y - 1, h + 1)]
                             graph_map.add_edge(vertical_az, vertical_bz)
+
+
+    @staticmethod
+    def get_number_node_from_position(pos: list):
+        a = round(pos[0])
+        b = round(pos[1])
+        c = round(pos[2])
+        node = BuildNavMap3D.position[(a, b, c)]
+        return node
 
     # At this moment this function has not realisation, perhaps it be create new node for station or cargo
     def add_additional_vert(self, graph_map):
