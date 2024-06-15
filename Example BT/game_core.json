@@ -1,0 +1,646 @@
+{
+    "data": {
+        "players_info": [
+            {
+                "city_team": "name city is now set",
+                "color_team": [
+                    0,
+                    0,
+                    255
+                ],
+                "name_team": "Blue",
+                "players": [
+                    {
+                        "current_pos": [
+                            -10.0,
+                            -10.0,
+                            0.0,
+                            0.0
+                        ],
+                        "data_object": {
+                            "stateObject": 0
+                        },
+                        "data_role": {
+                            "bonus_list": [],
+                            "cargo_color": [],
+                            "health": 100,
+                            "is_cargo": false,
+                            "is_shooting": false,
+                            "num_bullet": 3,
+                            "state": 0
+                        },
+                        "home_pos": [
+                            -0.68,
+                            0.187,
+                            0.0
+                        ],
+                        "id": 0,
+                        "is_blocked": false,
+                        "type_object": [
+                            "PioneerObject"
+                        ]
+                    },
+                    {
+                        "current_pos": [
+                            -10.0,
+                            -10.0,
+                            0.0,
+                            0.0
+                        ],
+                        "data_object": {
+                            "stateObject": 0
+                        },
+                        "data_role": {
+                            "bonus_list": [],
+                            "cargo_color": [],
+                            "health": 100,
+                            "is_cargo": false,
+                            "is_shooting": false,
+                            "num_bullet": 3,
+                            "state": 0
+                        },
+                        "home_pos": [
+                            -4.25,
+                            -1.99,
+                            0.0
+                        ],
+                        "id": 1,
+                        "is_blocked": false,
+                        "type_object": [
+                            "PioneerObject"
+                        ]
+                    },
+                    {
+                        "current_pos": [
+                            -10.0,
+                            -10.0,
+                            0.0,
+                            0.0
+                        ],
+                        "data_object": {
+                            "stateObject": 0
+                        },
+                        "data_role": {
+                            "bonus_list": [],
+                            "cargo_color": [],
+                            "health": 100,
+                            "is_cargo": false,
+                            "is_shooting": false,
+                            "num_bullet": 3,
+                            "state": 0
+                        },
+                        "home_pos": [
+                            -4.25,
+                            1.78,
+                            0.0
+                        ],
+                        "id": 2,
+                        "is_blocked": false,
+                        "type_object": [
+                            "PioneerObject"
+                        ]
+                    },
+                    {
+                        "current_pos": [
+                            -10.0,
+                            -10.0,
+                            0.0,
+                            0.0
+                        ],
+                        "data_object": {
+                            "stateObject": 0
+                        },
+                        "data_role": {
+                            "bonus_list": [],
+                            "cargo_color": [],
+                            "health": 100,
+                            "is_cargo": false,
+                            "is_shooting": false,
+                            "num_bullet": 3,
+                            "state": 0
+                        },
+                        "home_pos": [
+                            -4.25,
+                            3.83,
+                            0.0
+                        ],
+                        "id": 3,
+                        "is_blocked": false,
+                        "type_object": [
+                            "PioneerObject"
+                        ]
+                    },
+                    {
+                        "current_pos": [
+                            20,
+                            20,
+                            0,
+                            0
+                        ],
+                        "data_object": {
+                            "stateObject": 0
+                        },
+                        "data_role": {
+                            "bonus_list": [],
+                            "cargo_color": [],
+                            "health": 100,
+                            "is_cargo": false,
+                            "is_shooting": false,
+                            "num_bullet": 3,
+                            "state": 0
+                        },
+                        "home_pos": [
+                            [
+                                0,
+                                0,
+                                0
+                            ]
+                        ],
+                        "id": 4,
+                        "is_blocked": false,
+                        "type_object": [
+                            "PTZObject"
+                        ]
+                    }
+                ],
+                "score_team": 0
+            },
+            {
+                "city_team": "name city is now set",
+                "color_team": [
+                    255,
+                    0,
+                    0
+                ],
+                "name_team": "Red",
+                "players": [
+                    {
+                        "current_pos": [
+                            -10.0,
+                            -10.0,
+                            0.0,
+                            0.0
+                        ],
+                        "data_object": {
+                            "stateObject": 0
+                        },
+                        "data_role": {
+                            "bonus_list": [],
+                            "cargo_color": [],
+                            "health": 100,
+                            "is_cargo": false,
+                            "is_shooting": false,
+                            "num_bullet": 3,
+                            "state": 0
+                        },
+                        "home_pos": [
+                            4.35,
+                            -3.93,
+                            0.0
+                        ],
+                        "id": 5,
+                        "is_blocked": false,
+                        "type_object": [
+                            "EduBotObject"
+                        ]
+                    },
+                    {
+                        "current_pos": [
+                            -10.0,
+                            -10.0,
+                            0.0,
+                            0.0
+                        ],
+                        "data_object": {
+                            "stateObject": 0
+                        },
+                        "data_role": {
+                            "bonus_list": [],
+                            "cargo_color": [],
+                            "health": 100,
+                            "is_cargo": false,
+                            "is_shooting": false,
+                            "num_bullet": 3,
+                            "state": 0
+                        },
+                        "home_pos": [
+                            4.35,
+                            -2.1,
+                            0.0
+                        ],
+                        "id": 6,
+                        "is_blocked": false,
+                        "type_object": [
+                            "EduBotObject"
+                        ]
+                    },
+                    {
+                        "current_pos": [
+                            -10.0,
+                            -10.0,
+                            0.0,
+                            0.0
+                        ],
+                        "data_object": {
+                            "stateObject": 0
+                        },
+                        "data_role": {
+                            "bonus_list": [],
+                            "cargo_color": [],
+                            "health": 100,
+                            "is_cargo": false,
+                            "is_shooting": false,
+                            "num_bullet": 3,
+                            "state": 0
+                        },
+                        "home_pos": [
+                            4.35,
+                            1.77,
+                            0.0
+                        ],
+                        "id": 7,
+                        "is_blocked": false,
+                        "type_object": [
+                            "EduBotObject"
+                        ]
+                    },
+                    {
+                        "current_pos": [
+                            -10.0,
+                            -10.0,
+                            0.0,
+                            0.0
+                        ],
+                        "data_object": {
+                            "stateObject": 0
+                        },
+                        "data_role": {
+                            "bonus_list": [],
+                            "cargo_color": [],
+                            "health": 100,
+                            "is_cargo": false,
+                            "is_shooting": false,
+                            "num_bullet": 3,
+                            "state": 0
+                        },
+                        "home_pos": [
+                            4.35,
+                            3.9,
+                            0.0
+                        ],
+                        "id": 8,
+                        "is_blocked": false,
+                        "type_object": [
+                            "EduBotObject"
+                        ]
+                    },
+                    {
+                        "current_pos": [
+                            20,
+                            20,
+                            0,
+                            0
+                        ],
+                        "data_object": {
+                            "stateObject": 0
+                        },
+                        "data_role": {
+                            "bonus_list": [],
+                            "cargo_color": [],
+                            "health": 100,
+                            "is_cargo": false,
+                            "is_shooting": false,
+                            "num_bullet": 3,
+                            "state": 0
+                        },
+                        "home_pos": [
+                            [
+                                0,
+                                0,
+                                0
+                            ]
+                        ],
+                        "id": 9,
+                        "is_blocked": false,
+                        "type_object": [
+                            "PTZObject"
+                        ]
+                    }
+                ],
+                "score_team": 0
+            }
+        ],
+        "polygon_data": [
+            {
+                "current_pos": [
+                    0.4,
+                    -2.52,
+                    0.0,
+                    0
+                ],
+                "data_role": {
+                    "current_cargo_color": [],
+                    "current_conditions": 0,
+                    "is_cargo": false,
+                    "num_cargo": 0
+                },
+                "name_role": "Fabric_RolePolygon",
+                "vis_info": {
+                    "color": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "description": ""
+                }
+            },
+            {
+                "current_pos": [
+                    -0.68,
+                    0.187,
+                    0.0,
+                    0
+                ],
+                "data_role": {
+                    "current_cargo_color": [],
+                    "current_conditions": 0,
+                    "is_cargo": false,
+                    "num_cargo": 0
+                },
+                "name_role": "Fabric_RolePolygon",
+                "vis_info": {
+                    "color": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "description": ""
+                }
+            },
+            {
+                "current_pos": [
+                    0.25,
+                    2.82,
+                    0.0,
+                    0
+                ],
+                "data_role": {
+                    "current_cargo_color": [],
+                    "current_conditions": 0,
+                    "is_cargo": false,
+                    "num_cargo": 0
+                },
+                "name_role": "Fabric_RolePolygon",
+                "vis_info": {
+                    "color": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "description": ""
+                }
+            },
+            {
+                "current_pos": [
+                    1000.0,
+                    1000.0,
+                    0.0,
+                    0
+                ],
+                "data_role": {
+                    "current_cargo_color": [],
+                    "current_conditions": 0,
+                    "is_cargo": false,
+                    "num_cargo": 0
+                },
+                "name_role": "Fabric_RolePolygon",
+                "vis_info": {
+                    "color": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "description": ""
+                }
+            },
+            {
+                "current_pos": [
+                    -4.25,
+                    -3.65,
+                    0.0,
+                    0
+                ],
+                "data_role": {},
+                "name_role": "TakeoffArea_RolePolygon",
+                "vis_info": {
+                    "color": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "description": "1"
+                }
+            },
+            {
+                "current_pos": [
+                    -4.25,
+                    -1.99,
+                    0.0,
+                    0
+                ],
+                "data_role": {},
+                "name_role": "TakeoffArea_RolePolygon",
+                "vis_info": {
+                    "color": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "description": "2"
+                }
+            },
+            {
+                "current_pos": [
+                    -4.25,
+                    1.78,
+                    0.0,
+                    0
+                ],
+                "data_role": {},
+                "name_role": "TakeoffArea_RolePolygon",
+                "vis_info": {
+                    "color": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "description": "3"
+                }
+            },
+            {
+                "current_pos": [
+                    -4.25,
+                    3.83,
+                    0.0,
+                    0
+                ],
+                "data_role": {},
+                "name_role": "TakeoffArea_RolePolygon",
+                "vis_info": {
+                    "color": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "description": "4"
+                }
+            },
+            {
+                "current_pos": [
+                    -4.25,
+                    -0.15,
+                    0.0,
+                    0
+                ],
+                "data_role": {},
+                "name_role": "Weapoint_RolePolygon",
+                "vis_info": {
+                    "color": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "description": "1"
+                }
+            },
+            {
+                "current_pos": [
+                    4.35,
+                    -0.2,
+                    0.0,
+                    0
+                ],
+                "data_role": {},
+                "name_role": "Weapoint_RolePolygon",
+                "vis_info": {
+                    "color": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "description": "2"
+                }
+            },
+            {
+                "current_pos": [
+                    4.35,
+                    -3.93,
+                    0.0,
+                    0
+                ],
+                "data_role": {},
+                "name_role": "TakeoffArea_RolePolygon",
+                "vis_info": {
+                    "color": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "description": "3"
+                }
+            },
+            {
+                "current_pos": [
+                    4.35,
+                    -2.1,
+                    0.0,
+                    0
+                ],
+                "data_role": {},
+                "name_role": "TakeoffArea_RolePolygon",
+                "vis_info": {
+                    "color": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "description": "4"
+                }
+            },
+            {
+                "current_pos": [
+                    4.35,
+                    1.77,
+                    0.0,
+                    0
+                ],
+                "data_role": {},
+                "name_role": "TakeoffArea_RolePolygon",
+                "vis_info": {
+                    "color": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "description": "5"
+                }
+            },
+            {
+                "current_pos": [
+                    4.35,
+                    3.9,
+                    0.0,
+                    0
+                ],
+                "data_role": {},
+                "name_role": "TakeoffArea_RolePolygon",
+                "vis_info": {
+                    "color": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "description": "5"
+                }
+            },
+            {
+                "current_pos": [
+                    4.35,
+                    1.77,
+                    0.0,
+                    0
+                ],
+                "data_role": {},
+                "name_role": "TakeoffArea_RolePolygon",
+                "vis_info": {
+                    "color": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "description": "5"
+                }
+            },
+            {
+                "current_pos": [
+                    4.35,
+                    3.9,
+                    0.0,
+                    0
+                ],
+                "data_role": {},
+                "name_role": "TakeoffArea_RolePolygon",
+                "vis_info": {
+                    "color": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "description": "5"
+                }
+            }
+        ]
+    },
+    "result": true,
+    "status": 0
+}
