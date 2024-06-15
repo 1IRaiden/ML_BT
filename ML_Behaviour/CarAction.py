@@ -55,6 +55,8 @@ ode reaches the SUCCESS or FAILURE state. If the child node terminates,
     result = reader.is_keeper_key       
 '''
 
+# this scripts has not solution using web protocol it is issue future
+
 
 class Nav:
     def __init__(self, nav_map):
@@ -104,7 +106,7 @@ class Movement(Behaviour, Nav):
         start_time = time.time()
         idx_max = 0
         for i, pos in enumerate(self.dst):
-            self.game_car.move_for_target(self.game_car.id, pos[0], pos[1], 0)
+            self.game_car.move_for_target(self.game_car.id, pos[0], pos[1])
             idx_max = i
             end_time = time.time()
             if (end_time - start_time) > self.time_movement:
@@ -151,7 +153,7 @@ class MoveToTarget(Behaviour, Nav):
 
         if self.is_keeper:
             for i, pos in enumerate(self.dst):
-                self.game_car.move_for_target(self.game_car.id, pos[0], pos[1], 0)
+                self.game_car.move_for_target(self.game_car.id, pos[0], pos[1])
                 self.src = (pos[0], pos[1])
             self.dst = []
             return Status.SUCCESS

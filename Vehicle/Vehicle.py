@@ -22,11 +22,11 @@ class Vehicle(ABC):
         pass
 
     @abstractmethod
-    def move_for_target(self, _id, x, y=0, z=0):
+    def move_for_target(self, _id, x, y=0):
         pass
 
 
-class Car(Vehicle):
+class Drone(Vehicle):
     def __init__(self, id):
         super().__init__()
         self.x = 0
@@ -38,7 +38,12 @@ class Car(Vehicle):
 
     def set_connection(self, ip, port):
         self.connect: Pioneer = Pioneer(ip=ip, mavlink_port=port, logger=False)
+
+    def takeoff(self):
         self.connect.takeoff()
+
+    def land(self):
+        self.connect.land()
 
     def is_connected(self) -> bool:
         if self.connect:
@@ -52,10 +57,6 @@ class Car(Vehicle):
     def move_for_target(self, _id, x, y=0, z=0):
         self.connect.go_to_local_point(x, y, z, 0)
         while not self.connect.point_reached():
-            #if AIManager.get_event_status():
-            # print("I not think", AIManager.get_event_status())
-            #if AIManager.event.is_set():
-                #self.get_coordinate_position(_id)
             time.sleep(0.3)
 
     # This method return position points
@@ -72,14 +73,20 @@ class Car(Vehicle):
             time.sleep(0.1)
 
 
-class Drone(Vehicle):
-    def __init__(self):
+class Car(Vehicle):
+    def __init__(self, id):
         super().__init__()
         self.connect: EdubotGCS = ...
+        self.x = 0
+        self.y = 0
+        self.YOUR_POSITION = (0, 0)
+        self.dst = (0, 0)
+        self.id = id
 
     def set_connection(self, ip, port):
         try:
             self.connect = EdubotGCS(ip=ip, mavlink_port=port)
+            print(ip, port)
         except Exception:
             print("Не удалось подключиться к машинке")
 
@@ -89,11 +96,15 @@ class Drone(Vehicle):
         else:
             return True
 
+    def move_for_target(self, _id, x, y=0):
+        self.connect.go_to_local_point(x, y)
+        while not self.connect.point_reached():
+            time.sleep(0.3)
+
     def include_arm(self):
         time.sleep(1)
 
-    def move_for_target(self, _id, x, y=0, z=0):
-        self.connect.go_to_local_point(x=x, y=y)
+
 
 
 

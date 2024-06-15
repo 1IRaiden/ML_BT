@@ -1,3 +1,4 @@
+import time
 import networkx as nx
 from matplotlib import pyplot as plt
 import random
@@ -150,8 +151,19 @@ class FindNavPath:
         return ((x1-x2)**2+(y1-y2)**2)**0.5
 
     @staticmethod
+    def __heuristic_func_3d(a, b, G):
+        x1, y1, z1 = G.nodes[a]['pos']
+        x2, y2, z2 = G.nodes[b]['pos']
+        return ((x1-x2)**2+(y1-y2)**2 +(z1-z2)**2)**0.5
+
+    @staticmethod
     def find_path_A(g: nx.Graph, node_A, node_B):
         path_a_b = nx.astar_path(g, node_A, node_B, heuristic=lambda a, b: FindNavPath.__heuristic_func(a, b, g), weight='weight')
+        return path_a_b
+
+    @staticmethod
+    def find_path_A_3D(g: nx.Graph, node_A, node_B):
+        path_a_b = nx.astar_path(g, node_A, node_B, heuristic=lambda a, b: FindNavPath.__heuristic_func_3d(a, b, g), weight='weight')
         return path_a_b
 
 
@@ -174,14 +186,15 @@ class BuildNavMap3D:
         self.LENGTH = length
         self.WIDTH = width
         self.HEIGHT = height
-        self.amount_point = length * width*height
+        self.amount_point = length*width*height
         self.colors = []
         self.edges = []
         self.position = {}
 
         # Get empty graph
 
-    def get_graph(self):
+    @staticmethod
+    def get_graph():
         graph = nx.Graph()
         return graph
 
@@ -189,7 +202,7 @@ class BuildNavMap3D:
 
     def __get_position_node(self):
         points = []
-        for y in range (0, self.HEIGHT, 1):
+        for y in range(0, self.HEIGHT, 1):
             for x in range(0, self.LENGTH, 1):
                 for z in range(0, self.WIDTH, 1):
                     points.append((x, y, z))
@@ -202,14 +215,90 @@ class BuildNavMap3D:
             graph_map.add_node(i, pos=points[i], type="friendly", weight=1)
 
     def add_nav_edge(self, graph_map):
-        for y in range(0, self.LENGTH, 1):
-            for i in range(0, self.LENGTH, 1):
-                for j in range(0, self.WIDTH, 1):
-                    count = self.LENGTH*self.WIDTH + self.WIDTH * i + j
-                    if count % self.WIDTH != (self.WIDTH-1):
-                        graph_map.add_edge(count, count + 1, color='blue', weight= 1)
-                    if count < (self.LENGTH-1)*self.WIDTH:
-                        graph_map.add_edge(count, count + self.WIDTH, color='blue', weight=1)
+        for y in range(0, self.HEIGHT, 1):
+            for x in range(self.LENGTH):
+                for h in range(self.WIDTH):
+                    if x < self.LENGTH-1:
+                        vertical_a = self.position[(x, y, h)]
+                        vertical_b = self.position[(x + 1, y, h)]
+                        graph_map.add_edge(vertical_a, vertical_b)
+                    if h < self.WIDTH-1:
+                        vertical_ay = self.position[(x, y, h)]
+                        vertical_by = self.position[(x, y, h+1)]
+                        graph_map.add_edge(vertical_ay, vertical_by)
+                    if y < self.HEIGHT-1:
+                        vertical_az = self.position[(x, y, h)]
+                        vertical_bz= self.position[(x, y + 1 , h)]
+                        graph_map.add_edge(vertical_az, vertical_bz)
+
+    def add_nav_diagonal_grid(self, graph_map):
+        for y in range(0, self.HEIGHT, 1):
+            for x in range(self.LENGTH):
+                for h in range(self.WIDTH):
+                    if x < self.WIDTH-1 and y < self.HEIGHT-1:
+                        vertical_a = self.position[(x, y, h)]
+                        vertical_b = self.position[(x + 1, y + 1, h)]
+                        graph_map.add_edge(vertical_a, vertical_b)
+
+                    if h > 0 and x < self.LENGTH-1 and y < self.HEIGHT-1:
+                        vertical_ay = self.position[(x, y, h)]
+                        vertical_by = self.position[(x + 1, y + 1, h-1)]
+                        graph_map.add_edge(vertical_ay, vertical_by)
+
+                    if x > 0 and h < self.WIDTH-1 and y < self.HEIGHT-1:
+                        vertical_az = self.position[(x, y, h)]
+                        vertical_bz = self.position[(x - 1, y + 1, h + 1)]
+                        graph_map.add_edge(vertical_az, vertical_bz)
+
+                    if x > 0 and y > 0 and h > 0:
+                        if x > self.LENGTH-1 and h < self.WIDTH-1 and y < self.HEIGHT-1:
+                            vertical_az = self.position[(x, y, h)]
+                            vertical_bz = self.position[(x - 1, y - 1, h + 1)]
+                            graph_map.add_edge(vertical_az, vertical_bz)
+
+    # At this moment this function has not realisation, perhaps it be create new node for station or cargo
+    def add_additional_vert(self, graph_map):
+        pass
+
+    @staticmethod
+    def get_coordinate_path(graph_map, way):
+        coordinate = []
+        for wa in way:
+            position = graph_map.nodes[wa]['pos']
+            coordinate.append(position)
+        return coordinate
+
+
+if __name__ == '__main__':
+    nav_map = BuildNavMap3D(10, 10, 4)
+    graph_map = BuildNavMap3D.get_graph()
+    nav_map.add_nodes(graph_map)
+    nav_map.add_nav_edge(graph_map)
+    nav_map.add_nav_diagonal_grid(graph_map)
+
+    way = FindNavPath.find_path_A_3D(graph_map, 1, 233)
+    position = BuildNavMap3D.get_coordinate_path(graph_map, way)
+
+    fir = plt.figure(figsize=(10, 10))
+    ax = fir.add_subplot(projection='3d')
+
+    for i in range(len(position)-1):
+        x =[position[i][0], position[i + 1][0]]
+        y =[position[i][1], position[i + 1][1]]
+        z =[position[i][2], position[i + 1][2]]
+        ax.plot(x, y, z)
+
+    print(position)
+    plt.xlim(0, 10)
+    plt.ylim(0, 4)
+    t2 = time.time()
+
+    plt.show()
+
+
+
+
+
 
 
 
