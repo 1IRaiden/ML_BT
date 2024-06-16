@@ -114,7 +114,7 @@ class AIManagerBlackboard:
 
     @classmethod
     def set_keeper_status(cls, idx, status=False):
-        cls._instance.writer.set(variable_name=f"is_keeper{idx}_box", value=False)
+        cls._instance.writer.set(variable_name=f"is_keeper{idx}_box", value=status)
 
     @classmethod
     def get_is_keeper_idx_status(cls, idx):
@@ -135,6 +135,11 @@ class AIManagerBlackboard:
     def get_recharge_idx_status(cls, idx):
         recharge_status_idx = cls._instance.writer.get(f"need_recharge{idx}")
         return recharge_status_idx
+
+    @classmethod
+    def get_drone_landing_idx_status(cls, idx):
+        status = cls._instance.writer.get(variable_name=f"is_landing{idx}")
+        return status
 
     @classmethod
     def add_key(cls, name: str, value: typing.Any = False):

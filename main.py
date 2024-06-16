@@ -26,6 +26,12 @@ if __name__ == "__main__":
 
     home_positions, my_positions_ids, recharge_position, types_object = Researcher.get_config_information(data,
                                                                                                           my_commands)
+
+    round_home_position = []
+    for home_position in home_positions:
+        x, y, z = home_position
+        round_home_position.append([round(x), round(y), round(z)])
+
     cars_index = []
     pioneer_index = []
     for i, typ in enumerate(types_object):
@@ -49,6 +55,12 @@ if __name__ == "__main__":
     ai.set_status_all_drone_landing(pioneer_index)
     ai.set_main_status_for_game_object(my_positions_ids)
 
+    # Пробуем найти ошибкии в новой системе получения данных
+    ai.set_keeper_status(5, True)
+    ai.set_keeper_status(7, True)
+    ai.set_keeper_status(8, True)
+    ai.set_keeper_status(9, True)
+
     # Initialization 2D map
     if Agent.HAS_CARS_IN_GAMES:
         nav_map = BuildNavMap2D(10, 12)
@@ -64,7 +76,7 @@ if __name__ == "__main__":
 
     # Initiation 3D map
     if Agent.HAS_DRONE_IN_GAME:
-        nav_map_3d = BuildNavMap3D(10, 10, 4)
+        nav_map_3d = BuildNavMap3D(6, 6, 6)
         graph_map_3d = BuildNavMap3D.get_graph()
         nav_map_3d.add_nodes(graph_map_3d)
         nav_map_3d.add_nav_edge(graph_map_3d)

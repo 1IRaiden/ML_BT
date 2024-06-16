@@ -5,7 +5,6 @@ from ML_BT.Vehicle.Vehicle import Car
 from py_trees.behaviour import Behaviour
 from py_trees.common import Status
 from py_trees import common
-from py_trees.trees import BehaviourTree
 from ML_BT.ML_Behaviour.BTAgents import AIManagerBlackboard
 from ML_BT.SystemNavigation.Navigation import BuildNavMap2D, FindNavPath
 
@@ -70,19 +69,12 @@ class Initiate(Behaviour):
         time.sleep(1)
         return Status.SUCCESS
 
-        # if self.game_car.is_connected():
-        #     return Status.SUCCESS
-        # else:
-        #     time.sleep(10)
-        #     return Status.RUNNING
-
 
 class Movement(Behaviour, Nav):
-    def __init__(self, name, car: Car, graph_map, is_keeper=False):
+    def __init__(self, name, car: Car, graph_map):
         Behaviour.__init__(self, name)
         Nav.__init__(self, graph_map)
         self.time_movement = 7
-        self.is_keeper = is_keeper
         self.game_car = car
         self.src = 1
         self.dst = None
@@ -97,7 +89,7 @@ class Movement(Behaviour, Nav):
             self.dst = position
             self.real_dst = position.copy()
 
-        if self.is_keeper:
+        if AIManagerBlackboard.get_is_keeper_idx_status(self.game_car.id):
             return Status.SUCCESS
 
         start_time = time.time()
@@ -116,40 +108,38 @@ class Movement(Behaviour, Nav):
 
 
 class MoveToTarget(Behaviour, Nav):
-    def __init__(self, name, car: Car, is_keeper: bool, graph_map, current_position: list[float] = (0, 0)):
+    def __init__(self, name, car: Car, graph_map):
         Behaviour.__init__(self, name=name)
         Nav.__init__(self, nav_map=graph_map)
         self.game_car = car
-        self.src = current_position
-        self.is_keeper = is_keeper
-        self.has_cargo = False
+        self.src = [0, 0]
         self.dst = None
         self.target_position = None
 
     def update(self) -> common.Status:
-        if not self.is_keeper:
+        if not AIManagerBlackboard.get_is_keeper_idx_status(self.game_car.id):
             return Status.FAILURE
 
         src = None
         dst = None
         if not self.dst:
-            self.has_cargo = AIManagerBlackboard.get_has_cargo_idx_status(self.game_car.id)
-            if not self.has_cargo:
-                self.target_position = AIManagerBlackboard.get_value_key_blackboard("pos_box2")
+            if not AIManagerBlackboard.get_has_cargo_idx_status(self.game_car.id):
+                self.target_position = [7, 8]  #AIManagerBlackboard.get_value_key_blackboard("pos_box2")
             else:
                 self.target_position = AIManagerBlackboard.get_home_position(self.game_car.id)
+                print("target position", self.target_position)
 
             src = BuildNavMap2D.get_number_node_from_position(self.src)
             dst = BuildNavMap2D.get_number_node_from_position(self.target_position)
-            print(src, dst)
 
         way = FindNavPath.find_path_A(self.map, src, dst)
         position = BuildNavMap2D.get_coordinate_path(self.map, way)
 
         self.dst = position
 
-        if self.is_keeper:
+        if AIManagerBlackboard.get_is_keeper_idx_status(self.game_car.id):
             for i, pos in enumerate(self.dst):
+                print("movement")
                 self.game_car.move_for_target(self.game_car.id, pos[0], pos[1])
                 self.src = (pos[0], pos[1])
             self.dst = []
@@ -199,8 +189,9 @@ class TakeCargo(Behaviour):
     def update(self):
         time.sleep(1)
         print('Cargo is taken')
-        AIManagerBlackboard.change_value_key_blackboard(f"has_cargo{self.game_car.id}", True)
+        AIManagerBlackboard.set_status_has_cargo(self.game_car.id, True)
         return Status.SUCCESS
+
 
 class GiveCargo(Behaviour):
     def __init__(self, name, car):
@@ -210,7 +201,7 @@ class GiveCargo(Behaviour):
     def update(self):
         time.sleep(1)
         print('Cargo is given')
-        AIManagerBlackboard.change_value_key_blackboard(f"has_cargo{self.game_car.id}", False)
+        AIManagerBlackboard.set_status_has_cargo(self.game_car.id, False)
         return Status.SUCCESS
 
 

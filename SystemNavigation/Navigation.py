@@ -221,17 +221,17 @@ class BuildNavMap3D:
         for y in range(0, self.HEIGHT, 1):
             for x in range(self.LENGTH):
                 for h in range(self.WIDTH):
-                    if x < self.LENGTH-1:
+                    if y > 0 and x < self.LENGTH-1:
                         vertical_a = self.position[(x, y, h)]
                         vertical_b = self.position[(x + 1, y, h)]
                         graph_map.add_edge(vertical_a, vertical_b)
-                    if h < self.WIDTH-1:
+                    if y > 0 and h < self.WIDTH-1:
                         vertical_ay = self.position[(x, y, h)]
                         vertical_by = self.position[(x, y, h+1)]
                         graph_map.add_edge(vertical_ay, vertical_by)
                     if y < self.HEIGHT-1:
                         vertical_az = self.position[(x, y, h)]
-                        vertical_bz= self.position[(x, y + 1 , h)]
+                        vertical_bz = self.position[(x, y + 1, h)]
                         graph_map.add_edge(vertical_az, vertical_bz)
 
     def add_nav_diagonal_grid(self, graph_map):
@@ -264,6 +264,7 @@ class BuildNavMap3D:
         a = round(pos[0])
         b = round(pos[1])
         c = round(pos[2])
+        print(a, b, c)
         node = BuildNavMap3D.position[(a, b, c)]
         return node
 

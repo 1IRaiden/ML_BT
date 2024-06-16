@@ -3,12 +3,7 @@ import numpy as np
 from ML_BT.Vehicle.Vehicle import Car, Drone
 from py_trees.behaviour import Behaviour
 from py_trees.common import Status
-from py_trees.composites import Sequence, Parallel, Selector
 from py_trees import common
-import py_trees.decorators as de
-from py_trees.trees import BehaviourTree
-from py_trees import blackboard
-from pioneer_sdk import Pioneer
 from ML_BT.ML_Behaviour.BTAgents import AIManagerBlackboard
 from ML_BT.SystemNavigation.Navigation import BuildNavMap2D, FindNavPath, BuildNavMap3D
 
@@ -36,8 +31,11 @@ class TakeOff(Behaviour):
         self.drone = drone
 
     def update(self) -> common.Status:
-        if not False:
+        landing = AIManagerBlackboard.get_drone_landing_idx_status(self.drone.id)
+        if landing:
+            print("Дрон взлетел")
             self.drone.takeoff()
+            AIManagerBlackboard.set_status_drone_landing(self.drone.id, False)
             time.sleep(2)
 
         return Status.SUCCESS
@@ -49,37 +47,40 @@ class Landing(Behaviour):
         self.drone = drone
 
     def update(self) -> common.Status:
-        self.drone.land()
+        status = AIManagerBlackboard.get_drone_landing_idx_status(self.drone.id)
+        if not status:
+            self.drone.land()
+            AIManagerBlackboard.set_status_drone_landing(self.drone.id, True)
+            print("Посадка дрона совершена")
         return Status.SUCCESS
 
 
 class MovementDr(Behaviour, Nav3D):
-    def __init__(self, name, drone: Drone, graph_map, is_keeper=False):
+    def __init__(self, name, drone: Drone, graph_map):
         Behaviour.__init__(self, name)
         Nav3D.__init__(self, graph_map)
         self.time_movement = 7
-        self.is_keeper = is_keeper
-        self.game_car = drone
+        self.drone = drone
         self.src = 1
         self.dst = None
         self.real_dst = None
 
     def update(self):
         if not self.dst:
-            dst = np.random.randint(0, 400)
+            dst = np.random.randint(0, 6*6*6)
             way = FindNavPath.find_path_A_3D(self.map, self.src, dst)
             self.src = dst
             position = BuildNavMap3D.get_coordinate_path(self.map, way)
             self.dst = position
             self.real_dst = position.copy()
 
-        if self.is_keeper:
+        if AIManagerBlackboard.get_is_keeper_idx_status(self.drone.id):
             return Status.SUCCESS
 
         start_time = time.time()
         idx_max = 0
         for i, pos in enumerate(self.dst):
-            self.game_car.move_for_target(self.game_car.id, pos[0], pos[1], pos[2])
+            self.drone.move_for_target(self.drone.id, pos[0], pos[1], pos[2])
             idx_max = i
             end_time = time.time()
             if (end_time - start_time) > self.time_movement:
@@ -92,43 +93,41 @@ class MovementDr(Behaviour, Nav3D):
 
 
 class MoveToTargetDr(Behaviour, Nav3D):
-    def __init__(self, name, drone: Drone, is_keeper: bool, graph_map, current_position: list[float] = (0, 0)):
+    def __init__(self, name, drone: Drone, graph_map):
         Behaviour.__init__(self, name=name)
         Nav3D.__init__(self, nav_map=graph_map)
-        self.game_car = drone
-        self.src = current_position
-        self.is_keeper = is_keeper
-        self.has_cargo = False
+        self.drone = drone
+        self.src = AIManagerBlackboard.get_home_position(self.drone.id)
         self.dst = None
         self.target_position = None
 
     def update(self) -> common.Status:
-        if not self.is_keeper:
+        if not AIManagerBlackboard.get_is_keeper_idx_status(self.drone.id):
             return Status.FAILURE
 
         src = None
         dst = None
         if not self.dst:
-            self.has_cargo = AIManagerBlackboard.get_value_key_blackboard(F'has_cargo{self.game_car.id}')
-            if not self.has_cargo:
-                self.target_position = AIManagerBlackboard.get_value_key_blackboard("pos_box2")
+            if not AIManagerBlackboard.get_has_cargo_idx_status(self.drone.id):
+                self.target_position = [3, 0, 3] #AIManagerBlackboard.get_value_key_blackboard("pos_box2")
+                print("Drone get position")
             else:
-                self.target_position = self.game_car.YOUR_POSITION
+                self.target_position = AIManagerBlackboard.get_home_position(self.drone.id)
 
             src = BuildNavMap3D.get_number_node_from_position(self.src)
             dst = BuildNavMap3D.get_number_node_from_position(self.target_position)
-            print(src, dst)
 
         way = FindNavPath.find_path_A_3D(self.map, src, dst)
         position = BuildNavMap3D.get_coordinate_path(self.map, way)
 
         self.dst = position
 
-        if self.is_keeper:
+        if AIManagerBlackboard.get_is_keeper_idx_status(self.drone.id):
             for i, pos in enumerate(self.dst):
-                self.game_car.move_for_target(self.game_car.id, pos[0], pos[1], pos[2])
+                self.drone.move_for_target(self.drone.id, pos[0], pos[1], pos[2])
                 self.src = (pos[0], pos[1], pos[2])
             self.dst = []
+            print("Дрон достиг назначенной цели")
             return Status.SUCCESS
 
 
@@ -137,7 +136,8 @@ class StopDr(Behaviour):
         super().__init__(name)
 
     def update(self):
-        time.sleep(2)
+        print("Дрон остановился")
+        time.sleep(1)
         return Status.SUCCESS
 
 
@@ -145,7 +145,7 @@ class AttackDr(Behaviour):
     def __init__(self, name):
         super().__init__(name)
     def update(self):
-        print("Совершена удачная дрона атака")
+        # print("Совершена удачная дрона атака")
         return Status.SUCCESS
         if self.need_attack:
             if self.amount > 1:
@@ -162,14 +162,14 @@ class AttackDr(Behaviour):
 
 
 class TakeCargoDr(Behaviour):
-    def __init__(self, name, car):
+    def __init__(self, name, drone):
         super().__init__(name)
-        self.game_car = car
+        self.drone = drone
 
     def update(self):
         time.sleep(1)
-        print('Cargo is taken')
-        AIManagerBlackboard.change_value_key_blackboard(f"has_cargo{self.game_car.id}", True)
+        print('Drone take cargo is taken')
+        AIManagerBlackboard.set_status_has_cargo(self.drone.id, True)
         return Status.SUCCESS
 
 
@@ -180,8 +180,8 @@ class GiveCargoDr(Behaviour):
 
     def update(self):
         time.sleep(1)
-        print('Cargo is given')
-        AIManagerBlackboard.change_value_key_blackboard(f"has_cargo{self.drone.id}", False)
+        print('Drone give give give Cargo is given')
+        AIManagerBlackboard.set_status_has_cargo(self.drone.id, False)
         return Status.SUCCESS
 
 

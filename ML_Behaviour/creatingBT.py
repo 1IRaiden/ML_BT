@@ -2,7 +2,9 @@ import time
 from ML_BT.ML_Behaviour.CarAction import *
 from ML_BT.ML_Behaviour.DroneAction import *
 from typing import Union
-import ML_BT.Config as Config
+from py_trees.composites import Sequence, Parallel, Selector
+from py_trees.trees import BehaviourTree
+import py_trees.decorators as de
 
 
 class Agent:
@@ -41,13 +43,9 @@ class Agent:
         ac_initiate = de.OneShot(name='hit', child=action_initiate,
                                  policy=common.OneShotPolicy.ON_SUCCESSFUL_COMPLETION)
 
-        action_movement = Movement('movement', self.game_obj, Agent.nav_map_2d,                            #
-                                   AIManagerBlackboard.get_is_keeper_idx_status(self.game_obj.id))            #
-
-        action_move_target = MoveToTarget('target', self.game_obj,
-                                          AIManagerBlackboard.get_is_keeper_idx_status(self.game_obj.id), Agent.nav_map_2d)
-        action_move_target_1 = MoveToTarget('target', self.game_obj,
-                                            AIManagerBlackboard.get_is_keeper_idx_status(self.game_obj.id), Agent.nav_map_2d)
+        action_movement = Movement('movement', self.game_obj, Agent.nav_map_2d)            #
+        action_move_target = MoveToTarget('target', self.game_obj,  Agent.nav_map_2d)
+        action_move_target_1 = MoveToTarget('target', self.game_obj, Agent.nav_map_2d)
 
         action_attack = Attack('attack') # self.get_amount_patrons, self.update_amount_patrons,
                                # AIManagerBlackboard.get_attack_idx_status(self.game_obj.id))
@@ -111,15 +109,9 @@ class Agent:
         ac_initiate = de.OneShot(name='hit', child=action_initiate,
                                  policy=common.OneShotPolicy.ON_SUCCESSFUL_COMPLETION)
 
-        action_movement = MovementDr('movement', self.game_obj, Agent.nav_map_3d,
-                                     AIManagerBlackboard.get_is_keeper_idx_status(self.game_obj.id))
-
-        action_move_target = MoveToTargetDr('target', self.game_obj,
-                                            AIManagerBlackboard.get_is_keeper_idx_status(self.game_obj.id),
-                                            Agent.nav_map_3d)
-        action_move_target_1 = MoveToTargetDr('target', self.game_obj,
-                                            AIManagerBlackboard.get_is_keeper_idx_status(self.game_obj.id),
-                                            Agent.nav_map_3d)
+        action_movement = MovementDr('movement', self.game_obj, Agent.nav_map_3d)
+        action_move_target = MoveToTargetDr('target', self.game_obj, Agent.nav_map_3d)
+        action_move_target_1 = MoveToTargetDr('target', self.game_obj, Agent.nav_map_3d)
 
         action_attack = AttackDr('attack')
         action_attack_1 = AttackDr('attack_1')
@@ -151,7 +143,7 @@ class Agent:
 
         # Перед движением в воздухе необходимо взлететь:
         action_start_movement = Sequence("takeoff and checking", memory=True)
-        action_start_movement.add_children([action_takeoff_start, action_order_behaviour])
+        action_start_movement.add_children([action_order_behaviour])
 
         # Get plan action for take_cargo
         action_cargo_take = Sequence(name='cargoTake', memory=True)
@@ -190,6 +182,7 @@ class Agent:
 
         root.add_children([
             ac_initiate,
+            action_takeoff_start,
             action_choice_strategy,
         ])
         return root
