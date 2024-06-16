@@ -1,8 +1,4 @@
-Example BT/my_Example.py
-Example BT/Requester.py
-Example BT/getinfpjs.py
-Example BT/config.json
-Example BT/config_box.json
-Example BT/current_positions.json
-Example BT/game.json
-SystemNavigation/Visual.py
+Web_Core/my_Example.py
+Web_Core/Requester.py
+Web_Core/getinfpjs.py
+Web_Core/game.json

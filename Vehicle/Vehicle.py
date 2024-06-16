@@ -31,7 +31,6 @@ class Drone(Vehicle):
         super().__init__()
         self.x = 0
         self.y = 0
-        self.YOUR_POSITION = (0, 0)
         self.dst = (0, 0)
         self.id = id
         self.connect: Pioneer = ...
@@ -82,7 +81,6 @@ class Car(Vehicle):
         self.connect: EdubotGCS = ...
         self.x = 0
         self.y = 0
-        self.YOUR_POSITION = (0, 0)
         self.dst = (0, 0)
         self.id = id
 

@@ -18,11 +18,11 @@ class AIManager:
         # time.sleep(10)
         while True:
             pos_boxs, rewards = AIManager.get_info_about_box(path)
-            current_positions = AIManager.get_current_position_cars("Example BT/current_positions.json")
+            current_positions = AIManager.get_current_position_cars("Web_Core/current_positions.json")
 
-            for i, current_position in enumerate(current_positions):
-                ai_blackboard.add_key(f"car_current_position{i}", current_position)
-            AIManager.is_safe(current_positions)
+            # for i, current_position in enumerate(current_positions):
+                #ai_blackboard.add_key(f"car_current_position{i}", current_position)
+            # AIManager.is_safe(current_positions)
 
             for i, pos_box in enumerate(pos_boxs, start=1):
                 ai_blackboard.add_key(f"pos_box{i}", pos_box)
@@ -78,18 +78,14 @@ class AIManager:
         typ = random.choice(('friendly', 'unfriendly'))
         return node, typ
 
-    @classmethod
-    def is_safe(cls, currents_position):
-        if cls.__evaluate_distance_between_object(currents_position):
-            return
-        else:
-            # Логика изменения координат
-            print("situation not safe")
+
 
     @staticmethod
     def get_position_obstacle():
         pos_obstacle = ((2.4, 2.6), (1.1, 1.6), (2.3, 1.4), (6.5, 7.8))
         return pos_obstacle
+
+
 
     @classmethod
     def __evaluate_distance_between_object(cls, currents_position) -> bool:
@@ -102,6 +98,15 @@ class AIManager:
                     if dist_matrix[i][j] < 0.5:
                         return False
         return True
+
+
+    @classmethod
+    def is_safe(cls, currents_position):
+        if cls.__evaluate_distance_between_object(currents_position):
+            return
+        else:
+            # Логика изменения координат
+            print("situation not safe")
 
 
 # MOTION PLANNING

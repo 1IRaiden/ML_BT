@@ -1,69 +1,97 @@
 import threading
 import time
+import json
 from ML_Behaviour.creatingBT import Agent
 from ML_BT.ML_Behaviour.BTAgents import AIManagerBlackboard
-from ML_BT.SystemNavigation.ManagerMovement import AIManager
-from ML_BT.SystemNavigation.Navigation import BuildNavMap2D, FindNavPath, BuildNavMap3D
+from ML_BT.SystemNavigation.Navigation import BuildNavMap2D, BuildNavMap3D
 from ML_BT.Vehicle.Vehicle import Car, Drone
-from Config import HAS_DRONE_IN_GAME, HAS_CARS_IN_GAMES
-
-
-path = 'Example BT/config.json'
-path_box = r'C:\Users\user\Desktop\Проекты\MachineLeaning\MachineLearning\ML_BT\Example BT\config_box.json'
+from Config import AMOUNT_CAR, ALL_AI_OBJECT, TypeObject
+from ML_BT.Web_Core.Requester import Core, Researcher
 
 
 graph_map = None
-graph_map_2d = None
+graph_map_3d = None
+
 
 if __name__ == "__main__":
+    # Interactive with web game server and get main data for create game
+    core = Core()
+    ai = AIManagerBlackboard()
+
+    path = 'game_core.json'
+    my_commands = 'Red'
+
+    with open(path, 'r') as file:
+        data = json.load(file)
+
+    home_positions, my_positions_ids, recharge_position, types_object = Researcher.get_config_information(data,
+                                                                                                          my_commands)
+    cars_index = []
+    pioneer_index = []
+    for i, typ in enumerate(types_object):
+        if typ == TypeObject.geo_car.value[0]:
+            AMOUNT_CAR += 1
+            cars_index.append(my_positions_ids[i])
+        else:
+            pioneer_index.append(my_positions_ids[i])
+        ALL_AI_OBJECT += 1
+
+    if AMOUNT_CAR > 0:
+        Agent.HAS_CARS_IN_GAMES = True
+
+    amount_drone = ALL_AI_OBJECT - AMOUNT_CAR
+    if amount_drone > 0:
+        Agent.HAS_DRONE_IN_GAME = True
+
+    # Adding information about future agents on blackboard
+    ai.add_recharge_information(recharge_position[0], recharge_position[1])
+    ai.add_home_position(my_positions_ids, home_positions)
+    ai.set_status_all_drone_landing(pioneer_index)
+    ai.set_main_status_for_game_object(my_positions_ids)
+
     # Initialization 2D map
-    if HAS_CARS_IN_GAMES:
+    if Agent.HAS_CARS_IN_GAMES:
         nav_map = BuildNavMap2D(10, 12)
         graph_map = BuildNavMap2D.get_graph()
         nav_map.add_nodes(graph_map)
         nav_map.add_nav_edge(graph_map)
         nav_map.add_nav_diagonal_grid(graph_map)
-        position_obstacle = AIManager.get_position_obstacle()
+        position_obstacle = Researcher.get_obstacle_position()
         nodes = nav_map.find_not_comfortable_node(position_obstacle)
 
         for node in nodes:
             BuildNavMap2D.set_status_node(graph_map, node, "unfriendly")
 
     # Initiation 3D map
-    if HAS_DRONE_IN_GAME:
-        nav_map_2d = BuildNavMap3D(10, 10, 4)
-        graph_map_2d = BuildNavMap3D.get_graph()
-        nav_map_2d.add_nodes(graph_map_2d)
-        nav_map_2d.add_nav_edge(graph_map_2d)
-        nav_map_2d.add_nav_diagonal_grid(graph_map_2d)
+    if Agent.HAS_DRONE_IN_GAME:
+        nav_map_3d = BuildNavMap3D(10, 10, 4)
+        graph_map_3d = BuildNavMap3D.get_graph()
+        nav_map_3d.add_nodes(graph_map_3d)
+        nav_map_3d.add_nav_edge(graph_map_3d)
+        nav_map_3d.add_nav_diagonal_grid(graph_map_3d)
 
-    # Initialization cars and blackboard for save data
-    all_game_obj = 6
-    amount_agents_car = 3
-    ai = AIManagerBlackboard()
-    ai.add_all_status_cars(amount_agents_car)
+    # Set navigation map as main from movement
+    Agent.set_nav_map_for_game(nav_map_2d=graph_map, nav_map_3d=graph_map_3d)
 
     agents = []
     threads = []
 
-    manager = AIManager()
+    # Creation game_object : drones and cars
+    if Agent.HAS_CARS_IN_GAMES:
+        for number_car in range(AMOUNT_CAR):
+            car = Car(cars_index[number_car])
+            agent = Agent(car)
+            agents.append(agent)
+            thread = threading.Thread(target=agent.start_tick)
+            threads.append(thread)
 
-    # This thread will be follow game and do request on server
-    ai_thread = threading.Thread(target=manager.start_manager, args=(path_box, ai))
-    ai_thread.start()
-
-    start_positions = manager.get_start_position_from_config(path)
-
-    for i in range(amount_agents_car):
-        car = Car(i)
-        # car = Drone(i)
-        car.YOUR_POSITION = start_positions[i]
-
-        agent = Agent(i, graph_map, car)
-        # agent.create_behaviour_tree()
-        agents.append(agent)
-        thread = threading.Thread(target=agent.start_tick)
-        threads.append(thread)
+    if Agent.HAS_DRONE_IN_GAME:
+        for number_drone in range(amount_drone):
+            drone = Drone(pioneer_index[number_drone])
+            agent = Agent(drone)
+            agents.append(agent)
+            thread = threading.Thread(target=agent.start_tick)
+            threads.append(thread)
 
     for thread in threads:
         thread.start()

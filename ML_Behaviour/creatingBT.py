@@ -1,29 +1,38 @@
+import time
 from ML_BT.ML_Behaviour.CarAction import *
 from ML_BT.ML_Behaviour.DroneAction import *
 from typing import Union
-from ML_BT.Config import HAS_CARS_IN_GAMES, HAS_DRONE_IN_GAME
+import ML_BT.Config as Config
 
 
 class Agent:
     reader = AIManagerBlackboard().writer
-    nav_map = None
+    nav_map_2d = None
+    nav_map_3d = None
 
-    def __init__(self, name, nav_map, obj: Union[Car, Drone]):
+    HAS_CARS_IN_GAMES = False
+    HAS_DRONE_IN_GAME = False
+
+    def __init__(self, obj: Union[Car, Drone]):
         self.game_obj = obj
-        Agent.nav_map = nav_map
-        self.name = name
-        self.set_start_blackboard_position()
         self.tree = BehaviourTree(self.create_behaviour_tree())
 
-    # this method set start position for cars when creating agents
-    def set_start_blackboard_position(self):
-        AIManagerBlackboard.add_key(f"car_start_position{self.name}", self.game_obj.YOUR_POSITION)
-        # print(Agent.reader.get(f"car_start_position{self.name}"))
+    @classmethod
+    def change_value_status(cls, status_a, status_b):
+        cls.HAS_CARS_IN_GAMES = status_a
+        cls.HAS_DRONE_IN_GAME = status_b
+
+    @classmethod
+    def set_nav_map_for_game(cls, *, nav_map_2d=None, nav_map_3d=None):
+        if cls.HAS_CARS_IN_GAMES:
+            cls.nav_map_2d = nav_map_2d
+        if cls.HAS_DRONE_IN_GAME:
+            cls.nav_map_3d = nav_map_3d
 
     def create_behaviour_tree(self):
-        if HAS_CARS_IN_GAMES:
+        if isinstance(self.game_obj, Car):
             return self.create_behaviour_tree_car()
-        if HAS_DRONE_IN_GAME:
+        if isinstance(self.game_obj, Drone):
             return self.create_behaviour_tree_drone()
 
     def create_behaviour_tree_car(self):
@@ -32,17 +41,18 @@ class Agent:
         ac_initiate = de.OneShot(name='hit', child=action_initiate,
                                  policy=common.OneShotPolicy.ON_SUCCESSFUL_COMPLETION)
 
-        action_movement = Movement('movement', self.game_obj, Agent.nav_map, Agent.reader.get(f"is_keeper{self.name}_box"))
+        action_movement = Movement('movement', self.game_obj, Agent.nav_map_2d,                            #
+                                   AIManagerBlackboard.get_is_keeper_idx_status(self.game_obj.id))            #
 
-        action_move_target = MoveToTarget('target', self.game_obj, Agent.reader.get(f"is_keeper{self.name}_box"), Agent.nav_map)
-        action_move_target_1 = MoveToTarget('target', self.game_obj, Agent.reader.get(f"is_keeper{self.name}_box"), Agent.nav_map)
+        action_move_target = MoveToTarget('target', self.game_obj,
+                                          AIManagerBlackboard.get_is_keeper_idx_status(self.game_obj.id), Agent.nav_map_2d)
+        action_move_target_1 = MoveToTarget('target', self.game_obj,
+                                            AIManagerBlackboard.get_is_keeper_idx_status(self.game_obj.id), Agent.nav_map_2d)
 
-        action_attack = Attack('attack', self.get_amount_patrons, self.update_amount_patrons,
-                                 Agent.reader.get(f"attack{self.name}"))
-        action_attack_1 = Attack('attack_1', self.get_amount_patrons, self.update_amount_patrons,
-                                 Agent.reader.get(f"attack{self.name}"))
-        action_attack_2 = Attack('attack_2', self.get_amount_patrons, self.update_amount_patrons,
-                                 Agent.reader.get(f"attack{self.name}"))
+        action_attack = Attack('attack') # self.get_amount_patrons, self.update_amount_patrons,
+                               # AIManagerBlackboard.get_attack_idx_status(self.game_obj.id))
+        action_attack_1 = Attack('attack_1')
+        action_attack_2 = Attack('attack_2')
 
         action_take_cargo = TakeCargo('take', self.game_obj)
         action_give_cargo = GiveCargo('give', self.game_obj)
@@ -92,6 +102,7 @@ class Agent:
             ac_initiate,
             action_choice_strategy,
         ])
+
         return root
 
     def create_behaviour_tree_drone(self):
@@ -100,22 +111,22 @@ class Agent:
         ac_initiate = de.OneShot(name='hit', child=action_initiate,
                                  policy=common.OneShotPolicy.ON_SUCCESSFUL_COMPLETION)
 
-        action_movement = MovementDr('movement', self.game_obj, Agent.nav_map, Agent.reader.get(f"is_keeper{self.name}_box"))
+        action_movement = MovementDr('movement', self.game_obj, Agent.nav_map_3d,
+                                     AIManagerBlackboard.get_is_keeper_idx_status(self.game_obj.id))
 
-        action_move_target = MoveToTargetDr('target', self.game_obj, Agent.reader.get(f"is_keeper{self.name}_box"),
-                                          Agent.nav_map)
-        action_move_target_1 = MoveToTargetDr('target', self.game_obj, Agent.reader.get(f"is_keeper{self.name}_box"),
-                                            Agent.nav_map)
+        action_move_target = MoveToTargetDr('target', self.game_obj,
+                                            AIManagerBlackboard.get_is_keeper_idx_status(self.game_obj.id),
+                                            Agent.nav_map_3d)
+        action_move_target_1 = MoveToTargetDr('target', self.game_obj,
+                                            AIManagerBlackboard.get_is_keeper_idx_status(self.game_obj.id),
+                                            Agent.nav_map_3d)
 
-        action_attack = AttackDr('attack', self.get_amount_patrons, self.update_amount_patrons,
-                               Agent.reader.get(f"attack{self.name}"))
-        action_attack_1 = AttackDr('attack_1', self.get_amount_patrons, self.update_amount_patrons,
-                                 Agent.reader.get(f"attack{self.name}"))
-        action_attack_2 = AttackDr('attack_2', self.get_amount_patrons, self.update_amount_patrons,
-                                 Agent.reader.get(f"attack{self.name}"))
+        action_attack = AttackDr('attack')
+        action_attack_1 = AttackDr('attack_1')
+        action_attack_2 = AttackDr('attack_2')
 
-        action_take_cargo = TakeCargo('take', self.game_obj)
-        action_give_cargo = GiveCargo('give', self.game_obj)
+        action_take_cargo = TakeCargoDr('take', self.game_obj)
+        action_give_cargo = GiveCargoDr('give', self.game_obj)
         action_recharge = Recharge('recharge')
 
         action_stop = Stop('stop')
@@ -141,7 +152,6 @@ class Agent:
         # Перед движением в воздухе необходимо взлететь:
         action_start_movement = Sequence("takeoff and checking", memory=True)
         action_start_movement.add_children([action_takeoff_start, action_order_behaviour])
-
 
         # Get plan action for take_cargo
         action_cargo_take = Sequence(name='cargoTake', memory=True)
@@ -183,9 +193,6 @@ class Agent:
             action_choice_strategy,
         ])
         return root
-
-    # def create_behaviour_tree_drone(self):
-    #     return
 
     def start_tick(self):
         try:

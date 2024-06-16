@@ -133,11 +133,11 @@ class MoveToTarget(Behaviour, Nav):
         src = None
         dst = None
         if not self.dst:
-            self.has_cargo = AIManagerBlackboard.get_value_key_blackboard(F'has_cargo{self.game_car.id}')
+            self.has_cargo = AIManagerBlackboard.get_has_cargo_idx_status(self.game_car.id)
             if not self.has_cargo:
                 self.target_position = AIManagerBlackboard.get_value_key_blackboard("pos_box2")
             else:
-                self.target_position = self.game_car.YOUR_POSITION
+                self.target_position = AIManagerBlackboard.get_home_position(self.game_car.id)
 
             src = BuildNavMap2D.get_number_node_from_position(self.src)
             dst = BuildNavMap2D.get_number_node_from_position(self.target_position)
@@ -166,14 +166,17 @@ class Stop(Behaviour):
 
 
 class Attack(Behaviour):
-    def __init__(self, name,  get_amount_patrons, update_amount_patrons,
-                 need_attack=False):
+    def __init__(self, name):  #get_amount_patrons, update_amount_patrons,
+                 #need_attack=False):
         super().__init__(name)
-        self.amount = get_amount_patrons()
-        self.need_attack = need_attack
-        self.t = update_amount_patrons
+        #self.amount = get_amount_patrons()
+        #self.need_attack = need_attack
+        #self.t = update_amount_patrons
 
     def update(self):
+        print("Атака")
+        return Status.SUCCESS
+
         if self.need_attack:
             if self.amount > 1:
                 print('Attack is done')
@@ -198,7 +201,6 @@ class TakeCargo(Behaviour):
         print('Cargo is taken')
         AIManagerBlackboard.change_value_key_blackboard(f"has_cargo{self.game_car.id}", True)
         return Status.SUCCESS
-
 
 class GiveCargo(Behaviour):
     def __init__(self, name, car):

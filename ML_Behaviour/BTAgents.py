@@ -55,8 +55,86 @@ class AIManagerBlackboard:
             cls._instance.writer.set(variable_name=f"amount_patrons{i}", value=3)
 
             # parameters show have free recharge or not
+
+    @classmethod
+    def add_recharge_information(cls, pos_a: list[int], pos_b: list[int]):
+        cls._instance.writer.set(variable_name=f"pos_recharge{1}", value=pos_a)
+        cls._instance.writer.set(variable_name=f"pos_recharge{2}", value=pos_b)
         cls._instance.writer.set(variable_name=f"free_recharge{1}", value=False)
         cls._instance.writer.set(variable_name=f"free_recharge{2}", value=False)
+
+    @classmethod
+    def add_home_position(cls, my_positions_ids, home_positions):
+        for idx, home_pos in zip(my_positions_ids, home_positions):
+            cls._instance.writer.set(variable_name=f"obj_position{idx}", value=home_pos)
+
+    @classmethod
+    def read_recharge_position(cls):
+        pos_a = cls._instance.writer.get("pos_recharge1")
+        pos_b = cls._instance.writer.get("pos_recharge2")
+        return pos_a, pos_b
+
+    @classmethod
+    def __get_home_position_all(cls, my_positions_ids):
+        home_positions = []
+        for idx in my_positions_ids:
+            home_positions.append(cls._instance.writer.get(f"obj_position{idx}"))
+        return home_positions
+
+    @classmethod
+    def get_home_position(cls, idx):
+        home_pos = cls._instance.writer.get(f"obj_position{idx}")
+        return home_pos
+
+    @classmethod
+    def set_main_status_for_game_object(cls, indexes: list[int]):
+        for idx in indexes:
+            cls._instance.writer.set(variable_name=f"is_keeper{idx}_box", value=False)
+            cls._instance.writer.set(variable_name=f"attack{idx}", value=False)
+            cls._instance.writer.set(variable_name=f"has_cargo{idx}", value=False)
+            cls._instance.writer.set(variable_name=f"need_recharge{idx}", value=False)
+            cls._instance.writer.set(variable_name=f"amount_patrons{idx}", value=3)
+
+    @classmethod
+    def set_status_all_drone_landing(cls, idx_drones):
+        for idx in idx_drones:
+            cls._instance.writer.set(variable_name=f"is_landing{idx}", value=True)
+
+    @classmethod
+    def set_status_drone_landing(cls, idx, status):
+        cls._instance.writer.set(variable_name=f"is_landing{idx}", value=status)
+
+    @classmethod
+    def set_status_has_cargo(cls, idx, status):
+        cls._instance.writer.set(variable_name=f"has_cargo{idx}", value=status)
+
+    @classmethod
+    def set_status_need_recharge(cls, idx, status):
+        cls._instance.writer.set(variable_name=f"need_recharge{idx}", value=status)
+
+    @classmethod
+    def set_keeper_status(cls, idx, status=False):
+        cls._instance.writer.set(variable_name=f"is_keeper{idx}_box", value=False)
+
+    @classmethod
+    def get_is_keeper_idx_status(cls, idx):
+        keeper_status = cls._instance.writer.get(f"is_keeper{idx}_box")
+        return keeper_status
+
+    @classmethod
+    def get_attack_idx_status(cls, idx):
+        attack_status = cls._instance.writer.get(f"attack{idx}")
+        return attack_status
+
+    @classmethod
+    def get_has_cargo_idx_status (cls, idx):
+        has_cargo_status = cls._instance.writer.get(f"has_cargo{idx}")
+        return has_cargo_status
+
+    @classmethod
+    def get_recharge_idx_status(cls, idx):
+        recharge_status_idx = cls._instance.writer.get(f"need_recharge{idx}")
+        return recharge_status_idx
 
     @classmethod
     def add_key(cls, name: str, value: typing.Any = False):

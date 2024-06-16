@@ -142,14 +142,11 @@ class StopDr(Behaviour):
 
 
 class AttackDr(Behaviour):
-    def __init__(self, name,  get_amount_patrons, update_amount_patrons,
-                 need_attack=False):
+    def __init__(self, name):
         super().__init__(name)
-        self.amount = get_amount_patrons()
-        self.need_attack = need_attack
-        self.t = update_amount_patrons
-
     def update(self):
+        print("Совершена удачная дрона атака")
+        return Status.SUCCESS
         if self.need_attack:
             if self.amount > 1:
                 print('Attack is done')
@@ -164,7 +161,7 @@ class AttackDr(Behaviour):
         return Status.SUCCESS
 
 
-class TakeCargDr(Behaviour):
+class TakeCargoDr(Behaviour):
     def __init__(self, name, car):
         super().__init__(name)
         self.game_car = car
