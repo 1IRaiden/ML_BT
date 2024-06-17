@@ -19,6 +19,22 @@ class Core:
         return response
 
 
+class BoxRegard:
+    def __init__(self):
+        self.color = None
+        self.current_position = None
+        self.is_cargo = None
+
+    def add_color(self, color: tuple):
+        self.color = color
+
+    def add_position(self, position: list):
+        self.current_position = position
+
+    def set_status_is_cargo(self, status: bool):
+        self.is_cargo = status
+
+
 class Researcher:
     @staticmethod
     def current_position_players(data: Dict):
@@ -82,6 +98,25 @@ class Researcher:
 
         return home_positions, my_positions_ids, recharge_position, types_object
 
+    # wrong
+    @staticmethod
+    def get_position_cargos(data: Dict):
+        polygon_data: list = data["data"]["polygon_data"]
+        boxs = []
+
+        i = 1
+        for main_info in polygon_data:
+            box = BoxRegard()
+            if main_info['name_role'] == 'Fabric_RolePolygon':
+                box.add_color(tuple(main_info['vis_info']['color']))
+                box.set_status_is_cargo(main_info['data_role']['is_cargo'])
+                box.add_position(main_info['current_pos'][:-1])
+                boxs.append(box)
+                i += 1
+                if i == 4:
+                    break
+        return boxs
+
     @staticmethod
     def get_obstacle_position():
         with open('obstacle.json', 'r') as f:
@@ -90,7 +125,11 @@ class Researcher:
 
 
 
-
+# path = r'C:\Users\user\Desktop\Проекты\MachineLeaning\MachineLearning\ML_BT\game_core.json'
+# with open(path, 'r') as file:
+#     data =json.load(file)
+#
+# print(Researcher.get_position_cargos(data))
 
 
 

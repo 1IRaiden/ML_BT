@@ -1,7 +1,6 @@
 import time
 from pioneer_sdk import Pioneer
 from abc import ABC, abstractmethod
-from ML_BT.SystemNavigation.ManagerMovement import AIManager
 from ML_BT.Vehicle.edubot_sdk import EdubotGCS
 
 
@@ -68,7 +67,6 @@ class Drone(Vehicle):
             if data:
                 self.x = data[0]
                 self.y = data[1]
-                AIManager.update_position_cars(_id, data[0], data[1])
         except Exception:
             pass
         finally:

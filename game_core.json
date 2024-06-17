@@ -42,8 +42,8 @@
                     },
                     {
                         "current_pos": [
-                            -10.0,
-                            -10.0,
+                            1.0,
+                            1.0,
                             0.0,
                             0.0
                         ],
@@ -72,8 +72,8 @@
                     },
                     {
                         "current_pos": [
-                            -10.0,
-                            -10.0,
+                            5.2,
+                            1.0,
                             0.0,
                             0.0
                         ],
@@ -102,8 +102,8 @@
                     },
                     {
                         "current_pos": [
-                            -10.0,
-                            -10.0,
+                            3.0,
+                            -2.0,
                             0.0,
                             0.0
                         ],
@@ -132,9 +132,9 @@
                     },
                     {
                         "current_pos": [
-                            20,
-                            20,
-                            0,
+                            3.2,
+                            3.0,
+                            1,
                             0
                         ],
                         "data_object": {
@@ -176,8 +176,8 @@
                 "players": [
                     {
                         "current_pos": [
-                            -10.0,
-                            -10.0,
+                            -1.0,
+                            0.0,
                             0.0,
                             0.0
                         ],
@@ -199,16 +199,16 @@
                             0.0
                         ],
                         "id": 5,
-                        "is_blocked": false,
+                        "is_blocked": true,
                         "type_object": [
                             "EduBotObject"
                         ]
                     },
                     {
                         "current_pos": [
-                            -10.0,
-                            -10.0,
-                            0.0,
+                            1.0,
+                            1.4,
+                            1.0,
                             0.0
                         ],
                         "data_object": {
@@ -236,8 +236,8 @@
                     },
                     {
                         "current_pos": [
-                            -10.0,
-                            -10.0,
+                            4.35,
+                            2.1,
                             0.0,
                             0.0
                         ],
@@ -266,8 +266,8 @@
                     },
                     {
                         "current_pos": [
-                            -10.0,
-                            -10.0,
+                            3.2,
+                            3.0,
                             0.0,
                             0.0
                         ],
@@ -347,9 +347,9 @@
                 "name_role": "Fabric_RolePolygon",
                 "vis_info": {
                     "color": [
-                        0,
-                        0,
-                        0
+                        2,
+                        2,
+                        2
                     ],
                     "description": ""
                 }
@@ -364,7 +364,7 @@
                 "data_role": {
                     "current_cargo_color": [],
                     "current_conditions": 0,
-                    "is_cargo": false,
+                    "is_cargo": true,
                     "num_cargo": 0
                 },
                 "name_role": "Fabric_RolePolygon",
@@ -387,15 +387,15 @@
                 "data_role": {
                     "current_cargo_color": [],
                     "current_conditions": 0,
-                    "is_cargo": false,
+                    "is_cargo": true,
                     "num_cargo": 0
                 },
                 "name_role": "Fabric_RolePolygon",
                 "vis_info": {
                     "color": [
-                        0,
-                        0,
-                        0
+                        1,
+                        1,
+                        1
                     ],
                     "description": ""
                 }

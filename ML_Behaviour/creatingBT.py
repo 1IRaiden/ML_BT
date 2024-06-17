@@ -47,17 +47,18 @@ class Agent:
         action_move_target = MoveToTarget('target', self.game_obj,  Agent.nav_map_2d)
         action_move_target_1 = MoveToTarget('target', self.game_obj, Agent.nav_map_2d)
 
-        action_attack = Attack('attack') # self.get_amount_patrons, self.update_amount_patrons,
-                               # AIManagerBlackboard.get_attack_idx_status(self.game_obj.id))
-        action_attack_1 = Attack('attack_1')
-        action_attack_2 = Attack('attack_2')
+        action_attack = Attack('attack', self.game_obj)
+        action_attack_1 = Attack('attack_1', self.game_obj)
+        action_attack_2 = Attack('attack_2', self.game_obj)
 
         action_take_cargo = TakeCargo('take', self.game_obj)
         action_give_cargo = GiveCargo('give', self.game_obj)
         action_recharge = Recharge('recharge')
 
-        action_stop = Stop('stop')
-        action_stop_1 = Stop('stop_1')
+        action_stop = Stop('stop', self.game_obj)
+        action_stop_1 = Stop('stop_1', self.game_obj)
+
+        blocked = Blocked("block", self.game_obj)
 
         # Group free behaviour action for random position
         action_order_behaviour = Parallel(name="action_order_behaviour",
@@ -98,6 +99,7 @@ class Agent:
 
         root.add_children([
             ac_initiate,
+            blocked,
             action_choice_strategy,
         ])
 
@@ -113,16 +115,16 @@ class Agent:
         action_move_target = MoveToTargetDr('target', self.game_obj, Agent.nav_map_3d)
         action_move_target_1 = MoveToTargetDr('target', self.game_obj, Agent.nav_map_3d)
 
-        action_attack = AttackDr('attack')
-        action_attack_1 = AttackDr('attack_1')
-        action_attack_2 = AttackDr('attack_2')
+        action_attack = AttackDr('attack', self.game_obj)
+        action_attack_1 = AttackDr('attack_1', self.game_obj)
+        action_attack_2 = AttackDr('attack_2', self.game_obj)
 
         action_take_cargo = TakeCargoDr('take', self.game_obj)
         action_give_cargo = GiveCargoDr('give', self.game_obj)
         action_recharge = Recharge('recharge')
 
-        action_stop = Stop('stop')
-        action_stop_1 = Stop('stop_1')
+        action_stop = Stop('stop', self.game_obj)
+        action_stop_1 = Stop('stop_1', self.game_obj)
 
         action_takeoff_start = TakeOff("takeoff_start", drone=self.game_obj)
         action_takeoff_cargo = TakeOff("takeoff_cargo", drone=self.game_obj)
@@ -135,6 +137,8 @@ class Agent:
 
         # this parameter will realise in future
         action_takeoff_recharge = Landing("takeoff_recharge", drone=self.game_obj)
+
+        blocked = BlockedDr("block", self.game_obj)
 
         # Group free behaviour action for random position
         action_order_behaviour = Parallel(name="action_order_behaviour",
@@ -182,6 +186,7 @@ class Agent:
 
         root.add_children([
             ac_initiate,
+            blocked,
             action_takeoff_start,
             action_choice_strategy,
         ])
@@ -195,8 +200,3 @@ class Agent:
         except KeyboardInterrupt:
             print("\n  Manual cycle interruption (Ctrl+C)")
 
-    def update_amount_patrons(self, new_amount):
-        Agent.reader.set(f"amount_patrons{self.name}", new_amount)
-
-    def get_amount_patrons(self):
-        return Agent.reader.get(f"amount_patrons{self.name}")

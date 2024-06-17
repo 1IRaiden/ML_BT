@@ -1,11 +1,16 @@
 import time
 import numpy as np
-from ML_BT.Vehicle.Vehicle import Car, Drone
+from ML_BT.Vehicle.Vehicle import Drone
 from py_trees.behaviour import Behaviour
 from py_trees.common import Status
 from py_trees import common
 from ML_BT.ML_Behaviour.BTAgents import AIManagerBlackboard
-from ML_BT.SystemNavigation.Navigation import BuildNavMap2D, FindNavPath, BuildNavMap3D
+from ML_BT.SystemNavigation.Navigation import FindNavPath, BuildNavMap3D
+
+
+def status_blocked(idx):
+    status = AIManagerBlackboard.get_blocked_status_idx(idx)
+    return status
 
 
 class Nav3D:
@@ -31,6 +36,8 @@ class TakeOff(Behaviour):
         self.drone = drone
 
     def update(self) -> common.Status:
+        if status_blocked(self.drone.id):
+            return Status.FAILURE
         landing = AIManagerBlackboard.get_drone_landing_idx_status(self.drone.id)
         if landing:
             print("Дрон взлетел")
@@ -52,6 +59,8 @@ class Landing(Behaviour):
             self.drone.land()
             AIManagerBlackboard.set_status_drone_landing(self.drone.id, True)
             print("Посадка дрона совершена")
+            if status_blocked(self.drone.id):
+                return Status.FAILURE
         return Status.SUCCESS
 
 
@@ -80,6 +89,8 @@ class MovementDr(Behaviour, Nav3D):
         start_time = time.time()
         idx_max = 0
         for i, pos in enumerate(self.dst):
+            if status_blocked(self.drone.id):
+                return Status.FAILURE
             self.drone.move_for_target(self.drone.id, pos[0], pos[1], pos[2])
             idx_max = i
             end_time = time.time()
@@ -109,8 +120,7 @@ class MoveToTargetDr(Behaviour, Nav3D):
         dst = None
         if not self.dst:
             if not AIManagerBlackboard.get_has_cargo_idx_status(self.drone.id):
-                self.target_position = [3, 0, 3] #AIManagerBlackboard.get_value_key_blackboard("pos_box2")
-                print("Drone get position")
+                self.target_position = AIManagerBlackboard.get_box_reward_position()[:-1]
             else:
                 self.target_position = AIManagerBlackboard.get_home_position(self.drone.id)
 
@@ -124,6 +134,8 @@ class MoveToTargetDr(Behaviour, Nav3D):
 
         if AIManagerBlackboard.get_is_keeper_idx_status(self.drone.id):
             for i, pos in enumerate(self.dst):
+                if status_blocked(self.drone.id):
+                    return Status.FAILURE
                 self.drone.move_for_target(self.drone.id, pos[0], pos[1], pos[2])
                 self.src = (pos[0], pos[1], pos[2])
             self.dst = []
@@ -132,32 +144,36 @@ class MoveToTargetDr(Behaviour, Nav3D):
 
 
 class StopDr(Behaviour):
-    def __init__(self, name):
+    def __init__(self, name, drone: Drone):
         super().__init__(name)
+        self.drone = drone
 
     def update(self):
+        if status_blocked(self.drone.id):
+            return Status.FAILURE
         print("Дрон остановился")
         time.sleep(1)
         return Status.SUCCESS
 
 
 class AttackDr(Behaviour):
-    def __init__(self, name):
+    def __init__(self, name, drone: Drone):
         super().__init__(name)
-    def update(self):
-        # print("Совершена удачная дрона атака")
-        return Status.SUCCESS
-        if self.need_attack:
-            if self.amount > 1:
-                print('Attack is done')
-                self.amount -= 1
-                self.t(self.amount)
-            else:
-                print('Attack is not done')
-        else:
-            print("attack not need")
+        self.drone = drone
+        self.amount_patrons = 0
 
-        time.sleep(1)
+    def update(self):
+        if status_blocked(self.drone.id):
+            return Status.FAILURE
+        self.amount_patrons = AIManagerBlackboard.get_amount_patrons_idx(self.drone.id)
+        if AIManagerBlackboard.get_attack_idx_status(self.drone.id):
+            if self.amount_patrons > 0:
+                print(f"Дрон {self.drone.id} совершает удачную атаку")
+                AIManagerBlackboard.set_amount_patrons_idx(self.drone.id, self.amount_patrons - 1)
+            else:
+                print(f"Дрон {self.drone.id} не способна удачную атаку")
+                AIManagerBlackboard.set_status_need_recharge(self.drone.id, True)
+
         return Status.SUCCESS
 
 
@@ -167,6 +183,8 @@ class TakeCargoDr(Behaviour):
         self.drone = drone
 
     def update(self):
+        if status_blocked(self.drone.id):
+            return Status.FAILURE
         time.sleep(1)
         print('Drone take cargo is taken')
         AIManagerBlackboard.set_status_has_cargo(self.drone.id, True)
@@ -179,6 +197,8 @@ class GiveCargoDr(Behaviour):
         self.drone = drone
 
     def update(self):
+        if status_blocked(self.drone.id):
+            return Status.FAILURE
         time.sleep(1)
         print('Drone give give give Cargo is given')
         AIManagerBlackboard.set_status_has_cargo(self.drone.id, False)
@@ -198,4 +218,18 @@ class Recharge(Behaviour):
         else:
             return Status.RUNNING
 
+
+class BlockedDr(Behaviour):
+    def __init__(self, name, drone: Drone):
+        super().__init__(name)
+        self.time = 30
+        self.drone = drone
+
+    def update(self):
+        print("Im gere")
+        status = AIManagerBlackboard.get_blocked_status_idx(self.drone.id)
+        if status:
+            print("Blocked")
+            time.sleep(30)
+        return Status.SUCCESS
 

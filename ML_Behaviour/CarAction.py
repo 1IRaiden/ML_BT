@@ -54,6 +54,10 @@ ode reaches the SUCCESS or FAILURE state. If the child node terminates,
 # this scripts has not solution using web protocol it is issue future
 
 
+def status_blocked(idx):
+    return AIManagerBlackboard.get_blocked_status_idx(idx)
+
+
 class Nav:
     def __init__(self, nav_map):
         self.map = nav_map
@@ -82,6 +86,7 @@ class Movement(Behaviour, Nav):
 
     def update(self):
         if not self.dst:
+            print("I'm here")
             dst = np.random.randint(0, 99)
             way = FindNavPath.find_path_A(self.map, self.src, dst)
             self.src = dst
@@ -95,6 +100,8 @@ class Movement(Behaviour, Nav):
         start_time = time.time()
         idx_max = 0
         for i, pos in enumerate(self.dst):
+            if status_blocked(self.game_car.id):
+                return Status.FAILURE
             self.game_car.move_for_target(self.game_car.id, pos[0], pos[1])
             idx_max = i
             end_time = time.time()
@@ -124,7 +131,7 @@ class MoveToTarget(Behaviour, Nav):
         dst = None
         if not self.dst:
             if not AIManagerBlackboard.get_has_cargo_idx_status(self.game_car.id):
-                self.target_position = [7, 8]  #AIManagerBlackboard.get_value_key_blackboard("pos_box2")
+                self.target_position = AIManagerBlackboard.get_box_reward_position()[:-1]
             else:
                 self.target_position = AIManagerBlackboard.get_home_position(self.game_car.id)
                 print("target position", self.target_position)
@@ -139,7 +146,8 @@ class MoveToTarget(Behaviour, Nav):
 
         if AIManagerBlackboard.get_is_keeper_idx_status(self.game_car.id):
             for i, pos in enumerate(self.dst):
-                print("movement")
+                if status_blocked(self.game_car.id):
+                    return Status.FAILURE
                 self.game_car.move_for_target(self.game_car.id, pos[0], pos[1])
                 self.src = (pos[0], pos[1])
             self.dst = []
@@ -147,37 +155,34 @@ class MoveToTarget(Behaviour, Nav):
 
 
 class Stop(Behaviour):
-    def __init__(self, name):
+    def __init__(self, name, car: Car):
         super().__init__(name)
+        self.game_car = car
 
     def update(self):
+        if status_blocked(self.game_car.id):
+            return Status.FAILURE
         time.sleep(2)
         return Status.SUCCESS
 
 
 class Attack(Behaviour):
-    def __init__(self, name):  #get_amount_patrons, update_amount_patrons,
-                 #need_attack=False):
+    def __init__(self, name, car: Car):
         super().__init__(name)
-        #self.amount = get_amount_patrons()
-        #self.need_attack = need_attack
-        #self.t = update_amount_patrons
+        self.game_car = car
+        self.amount_patrons = 0
 
     def update(self):
-        print("Атака")
-        return Status.SUCCESS
-
-        if self.need_attack:
-            if self.amount > 1:
-                print('Attack is done')
-                self.amount -= 1
-                self.t(self.amount)
+        if status_blocked(self.game_car.id):
+            return Status.FAILURE
+        self.amount_patrons = AIManagerBlackboard.get_amount_patrons_idx(self.game_car.id)
+        if AIManagerBlackboard.get_attack_idx_status(self.game_car.id):
+            if self.amount_patrons > 0 :
+                print(f"Машинка {self.game_car.id} совершает удачную атаку")
             else:
-                print('Attack is not done')
-        else:
-            print("attack not need")
+                print(f"Машинка {self.game_car.id} не способна удачную атаку")
+                AIManagerBlackboard.set_status_need_recharge(self.game_car.id, True)
 
-        time.sleep(1)
         return Status.SUCCESS
 
 
@@ -188,6 +193,8 @@ class TakeCargo(Behaviour):
 
     def update(self):
         time.sleep(1)
+        if status_blocked(self.game_car.id):
+            return Status.FAILURE
         print('Cargo is taken')
         AIManagerBlackboard.set_status_has_cargo(self.game_car.id, True)
         return Status.SUCCESS
@@ -200,6 +207,8 @@ class GiveCargo(Behaviour):
 
     def update(self):
         time.sleep(1)
+        if status_blocked(self.game_car.id):
+            return Status.FAILURE
         print('Cargo is given')
         AIManagerBlackboard.set_status_has_cargo(self.game_car.id, False)
         return Status.SUCCESS
@@ -208,7 +217,7 @@ class GiveCargo(Behaviour):
 class Recharge(Behaviour):
     def __init__(self, name):
         super().__init__(name)
-        self.time_recharge = 10
+        self.time_recharge = 30
 
     def update(self):
         time.sleep(1)
@@ -217,6 +226,22 @@ class Recharge(Behaviour):
             return Status.SUCCESS
         else:
             return Status.RUNNING
+
+
+class Blocked(Behaviour):
+    def __init__(self, name, car: Car):
+        super().__init__(name)
+        self.time = 30
+        self.car = car
+
+    def update(self):
+        print("Im gere")
+        status = AIManagerBlackboard.get_blocked_status_idx(self.car.id)
+        if status:
+            print("Blocked")
+            time.sleep(30)
+
+        return Status.SUCCESS
 
 
 

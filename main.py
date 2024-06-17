@@ -2,6 +2,7 @@ import threading
 import time
 import json
 from ML_Behaviour.creatingBT import Agent
+from ML_BT.SystemNavigation.ManagerMovement import AIBehaviour
 from ML_BT.ML_Behaviour.BTAgents import AIManagerBlackboard
 from ML_BT.SystemNavigation.Navigation import BuildNavMap2D, BuildNavMap3D
 from ML_BT.Vehicle.Vehicle import Car, Drone
@@ -55,11 +56,9 @@ if __name__ == "__main__":
     ai.set_status_all_drone_landing(pioneer_index)
     ai.set_main_status_for_game_object(my_positions_ids)
 
-    # Пробуем найти ошибкии в новой системе получения данных
-    ai.set_keeper_status(5, True)
-    ai.set_keeper_status(7, True)
-    ai.set_keeper_status(8, True)
-    ai.set_keeper_status(9, True)
+    behaviour = AIBehaviour(core, my_positions_ids)
+    behaviour.start_behaviour(data)
+    time.sleep(100)
 
     # Initialization 2D map
     if Agent.HAS_CARS_IN_GAMES:
