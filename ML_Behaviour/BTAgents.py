@@ -68,11 +68,33 @@ class AIManagerBlackboard:
             cls._instance.writer.set(variable_name=f"need_recharge{idx}", value=False)
             cls._instance.writer.set(variable_name=f"amount_patrons{idx}", value=3)
             cls._instance.writer.set(variable_name=f"is_blocked{idx}", value=False)
+            cls._instance.writer.set(variable_name=f"dst_position_obj_reached{idx}", value = False)
+            cls._instance.writer.set(variable_name=f"take_cargo{idx}", value = False)
+            cls._instance.writer.set(variable_name=f"give_cargo{idx}", value=False)
+
+    @classmethod
+    def set_current_position_idx(cls, idx, position= (0, 0, 0)):
+        cls._instance.writer.set(variable_name=f"current_position{idx}", value=position)
+
+    @classmethod
+    def set_take_cargo_status_idx(cls, idx, status: bool):
+        cls._instance.writer.set(variable_name=f"take_cargo{idx}", value=status)
+
+    @classmethod
+    def set_give_cargo_status_idx(cls, idx, status: bool):
+        cls._instance.writer.set(variable_name=f"give_cargo{idx}", value=status)
+
+    @classmethod
+    def set_recharge_position_station(cls, idx, position):
+        cls._instance.writer.set(variable_name=f"recharge_position_station{idx}", value=position)
 
     @classmethod
     def set_status_all_drone_landing(cls, idx_drones):
         for idx in idx_drones:
-            cls._instance.writer.set(variable_name=f"is_landing{idx}", value=True)
+            # cls._instance.writer.set(variable_name=f"is_landing{idx}", value=False)
+            # cls._instance.writer.set(variable_name=f"is_landing{idx}", value=False)
+            cls._instance.writer.set(variable_name=f"need_takeoff{idx}", value=False)
+            cls._instance.writer.set(variable_name=f"need_land{idx}", value=False)
 
     @classmethod
     def set_box_reward_position(cls, position: list):
@@ -105,6 +127,32 @@ class AIManagerBlackboard:
     @classmethod
     def set_blocked_status_idx(cls, idx, status):
         cls._instance.writer.set(variable_name = f"is_blocked{idx}", value=status)
+
+    @classmethod
+    def set_dst_position_idx(cls, idx, position):
+        cls._instance.writer.set(variable_name = f"dst_position_obj{idx}", value=position)
+
+    @classmethod
+    def set_status_reaching_dst_target(cls, idx, status):
+        cls._instance.writer.set(variable_name = f"dst_position_obj_reached{idx}", value=status)
+
+    @classmethod
+    def set_takeoff_status_drone(cls, idx, value: bool):
+        cls._instance.writer.set(variable_name=f"need_takeoff{idx}", value=value)
+
+    @classmethod
+    def set_landing_status_drone(cls, idx, value):
+        cls._instance.writer.set(variable_name=f"need_land{idx}", value=value)
+
+    @classmethod
+    def get_take_cargo_status_idx(cls, idx):
+        status = cls._instance.writer.get(f"take_cargo{idx}")
+        return status
+
+    @classmethod
+    def get_give_cargo_status_idx(cls, idx):
+        status = cls._instance.writer.get(f"give_cargo{idx}")
+        return status
 
     @classmethod
     def get_home_position(cls, idx):
@@ -151,6 +199,34 @@ class AIManagerBlackboard:
         position = cls._instance.writer.get(f"box_reward_position")
         return position
 
+    @classmethod
+    def get_dst_position_idx(cls, idx):
+        position = cls._instance.writer.get(f"dst_position_obj{idx}")
+        return position
+
+    @classmethod
+    def get_status_reaching_dst_target(cls, idx):
+        status = cls._instance.writer.get(f"dst_position_obj_reached{idx}")
+        return status
+
+    @classmethod
+    def get_takeoff_status_drone(cls, idx):
+        status = cls._instance.writer.get(f"need_takeoff{idx}")
+        return status
+
+    @classmethod
+    def get_landing_status_drone(cls, idx):
+        cls._instance.writer.get(f"need_land{idx}")
+
+    @classmethod
+    def get_recharge_position_station(cls, idx):
+        position = cls._instance.writer.get(f"recharge_position_station{idx}")
+        return position
+
+    @classmethod
+    def get_current_position_idx(cls, idx):
+        position = cls._instance.writer.get(f"current_position{idx}")
+        return position
 
 
 

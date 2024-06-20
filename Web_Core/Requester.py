@@ -13,6 +13,7 @@ class Core:
 
     def __init__(self):
         self.command = 'http://10.10.2.63:31222/game?target=get&type_command=player&command=visualization'
+        self.send = "http://10.10.2.63:31222/game?"
 
     def do_require_on_server(self):
         response = requests.get(self.command)
@@ -33,6 +34,12 @@ class BoxRegard:
 
     def set_status_is_cargo(self, status: bool):
         self.is_cargo = status
+
+
+class RechargeStation:
+    def __init__(self):
+        self.position = None
+        self.freedom = None
 
 
 class Researcher:
@@ -116,6 +123,27 @@ class Researcher:
                 if i == 4:
                     break
         return boxs
+
+    @staticmethod
+    def get_information_about_charges(data: Dict):
+        polygon_data: list = data["data"]["polygon_data"]
+        position = []
+
+        for main_info in polygon_data:
+            if main_info['name_role'] == "Weapoint_RolePolygon":
+                pos = main_info['current_pos'][:-1]
+                position.append(pos)
+        return position
+
+    @staticmethod
+    def status_for_keeper(data, box: BoxRegard) -> bool :
+        polygon_data: list = data["data"]["polygon_data"]
+        for main_info in polygon_data:
+            if main_info['name_role'] == 'Fabric_RolePolygon':
+                if tuple(main_info['vis_info']['color']) == box.color:
+                    if main_info['current_pos'][:-1] == box.current_position:
+                        return True
+        return False
 
     @staticmethod
     def get_obstacle_position():

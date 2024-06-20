@@ -3,7 +3,7 @@ from enum import Enum
 
 AMOUNT_CAR = 0
 ALL_AI_OBJECT = 0
-
+IF_FORWARD = False
 
 class TypeObject(Enum):
     geo_car = "EduBotObject",

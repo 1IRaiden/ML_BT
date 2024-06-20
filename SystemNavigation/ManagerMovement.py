@@ -1,17 +1,79 @@
-import random
+import sys
+import numpy as np
 import time
 import typing
+from ML_BT.Config import IF_FORWARD
 from enum import Enum
-import json
 from ML_BT.ML_Behaviour.BTAgents import AIManagerBlackboard
 from ML_BT.Web_Core.Requester import Core, Researcher, BoxRegard
 from collections import Counter
+from dataclasses import dataclass, asdict
+from abc import ABC
 
 
 class Colors(Enum):
     color_one = (0, 0, 0)
     color_two = (1, 1, 1)
     color_three = (2, 2, 2)
+
+
+class Template(ABC):
+    def set_status(self, status: bool):
+        pass
+
+    def set_status_attack(self, status: bool):
+        pass
+
+    def reset(self):
+        pass
+
+
+@dataclass
+class Model3D(Template):
+    id: int
+    ax1: int = 1500
+    ax2: int = 1500
+    ax3: int = 1500
+    ax4: int = 0
+    status: bool = False
+    status_attack: bool = False
+
+    def set_status(self, status: bool):
+        self.status = status
+
+    def set_status_attack(self, status: bool):
+        self.status_attack = status
+
+    def reset(self):
+        self.ax1 = 1500
+        self.ax2 = 1500
+        self.ax3 = 1500
+        self.ax4 = 0
+        self.status = False
+        self.status_attack = False
+
+
+@dataclass
+class Model2D(Template):
+    id: int
+    ax1: int = 1500
+    ax2: int = 1500
+    ax3: int = 0
+    status: bool = False
+    status_attack: bool = False
+
+    def set_status(self, status: bool):
+        self.status = status
+
+    def set_status_attack(self, status: bool):
+        self.status_attack = status
+
+    def reset(self):
+        self.ax1 = 1500
+        self.ax2 = 1500
+        self.ax3 = 0
+        self.status = False
+        self.status_attack = False
 
 
 class AIBehaviour:
@@ -24,37 +86,125 @@ class AIBehaviour:
 
     def __init__(self, core: Core, my_indexes):
         self.core = core
+
         self.my_position = my_indexes
         self.blocked = None
+        self.current_positions = None
+        self.nums_bullets = None
+        self.amount_drone = None
+        self.amount_car = None
+        self.store : typing.Dict[int, typing.Union[Model2D, Model3D]] = {}
+
         self.attack_radius = 0.5
         self.amount_box = 3
-        self.nums_bullets = None
-        self.current_positions = None
+        self.inaccuracy = 0.4
+        self.P = 500
+        self.time = 1
 
-    def get_config_data(self):
-        pass
+        # color chose cargo
+        self.keeper: int = -1
+        self.box: typing.Optional[BoxRegard] = None
+
+        self.first = True
+
+    def set_amounts_parameters(self, amount_drone: list, amount_car: list):
+        self.amount_car = amount_car
+        self.amount_drone = amount_drone
 
     def start_behaviour(self, data):
+        for item in self.amount_car:
+            inf = Model2D(item)
+            self.store[item] = inf
+            # print(self.store[item])
+
+        for item in self.amount_drone:
+            inf = Model3D(item)
+            self.store[item] = inf
+            # print(self.store[item])
+
         while True:
+            time.sleep(self.time)
             # data = self.core.do_require_on_server()
             ids, current_positions, is_cargo, nums_bullet, is_blocked, color_team \
                 = Researcher.current_position_players(data)
 
+            position_recharge = Researcher.get_information_about_charges(data)
+            for i, pos in enumerate(position_recharge):
+                AIManagerBlackboard.set_recharge_position_station(i, pos)
+
+            # logic amount bullets
             self.nums_bullets = nums_bullet
             self.set_status_num_bullets_on_blackboard()
 
             self.blocked = is_blocked
-            boxs: list[BoxRegard] = Researcher.get_position_cargos(data)
+            self.__set_cargo_status_for_players(is_cargo)
 
+            # logic choose box
+            boxs: list[BoxRegard] = Researcher.get_position_cargos(data)
             self.current_positions = self.determine_attack_status(current_positions, is_blocked, ids)
-            self.choice_one_drones(boxs)
-            break
+            self.set_current_position_on_blackboard()
+
+            if not IF_FORWARD:
+                try:
+                    self.determine_status_dst_from_game_object(current_positions)
+                    if len(self.amount_drone) > 0:
+                        for number_drone in self.amount_drone:
+                            # takeoff
+                            res_takeoff = AIManagerBlackboard.get_takeoff_status_drone(number_drone)
+                            if res_takeoff:
+                                self.store[number_drone].set_status(True)
+                                # perhaps need delay ...
+                                AIManagerBlackboard.set_takeoff_status_drone(number_drone, False)
+                            else:
+                                self.store[number_drone].set_status(False)
+
+                            # landing
+                            res_landing = AIManagerBlackboard.get_landing_status_drone(number_drone)
+                            if res_landing:
+                                self.store[number_drone].set_status(True)
+                                # perhaps need delay ...
+                                AIManagerBlackboard.set_landing_status_drone(number_drone, False)
+                            else:
+                                self.store[number_drone].set_status(False)
+                            # logic using this parameters ...
+                except Exception as e:
+                    print(f"Возникла ошибка {e}")
+
+            if self.first:
+                self.choice_one_drones(boxs)
+                self.first = not self.first
+
+            # for item in self.my_position:
+            #   print(self.store[item])
+
+            if not self.check_has_cargo():
+
+                '''In this case, the freedom of the cargo is checked, taking into account its location, 
+                but it is quite possible that information about enemy objects will need to be used'''
+                if self.box:
+                    if not Researcher.status_for_keeper(data, self.box):
+                        sys.stderr.write("Status was changed: Manager")
+                        AIManagerBlackboard.set_keeper_status(self.keeper, False)
+                        if not self.check_has_is_keeper():
+                            self.choice_one_drones(boxs)
+
+            for item in self.my_position:
+                map_action = asdict(self.store[item])
+                # Отправляем запрос с данными по json на сервер
+
+            for item in self.my_position:
+                self.store[item].reset()
 
     def set_status_num_bullets_on_blackboard(self):
         for idx in self.my_position:
             AIManagerBlackboard.set_amount_patrons_idx(idx, self.nums_bullets[idx])
 
+    def set_current_position_on_blackboard(self):
+        for idx in self.my_position:
+            AIManagerBlackboard.set_current_position_idx(idx, self.current_positions[idx])
+
     def determine_attack_status(self, current_position: list, is_blocked: list[bool], ids: list):
+        AIManagerBlackboard.set_status_need_recharge(9, True) ################
         my_coordinates = {}
         enemy_coordinates = {}
 
@@ -74,8 +224,15 @@ class AIBehaviour:
 
         couples = self.find_distance_between_game_object(my_coordinates, enemy_coordinates)
         for couple in couples:
-            if is_blocked[couple[0]]:
-                AIManagerBlackboard.set_attack_status_idx(couple[0], True)
+            if not is_blocked[couple[0]]:
+                # We set the attack status in case of success and otherwise sets the status of the need to recharge
+                if self.nums_bullets[couple[0]] > 0:
+                    AIManagerBlackboard.set_attack_status_idx(couple[0], True)
+                    self.store[couple[0]].set_status_attack(True)
+                    AIManagerBlackboard.set_status_need_recharge(couple[0], False)
+                else:
+                    AIManagerBlackboard.set_status_need_recharge(couple[0], True)
+
         return my_coordinates
 
     def find_distance_between_game_object(self, my_coordinates: dict, enemy_coordinates: dict):
@@ -98,6 +255,8 @@ class AIBehaviour:
         if idx:
             AIManagerBlackboard.set_keeper_status(idx, True)
             AIManagerBlackboard.set_box_reward_position(box.current_position)
+            self.box = box
+            self.keeper = idx
             print(f"Назначен дрон с индексом {idx} и груз с цветом {box.color}")
 
     def choice_one_drones(self, box_info: list[BoxRegard]):
@@ -163,47 +322,55 @@ class AIBehaviour:
                 return i
         return None
 
+    def determine_status_dst_from_game_object(self, currents_positions: list):
+        for i in self.my_position:
+            # dst_position = AIManagerBlackboard.get_dst_position_idx(i)
+            dst_position = AIManagerBlackboard.get_home_position(i)
+            x, y, z = dst_position
+            x1, y1, z1 = currents_positions[i]
+            dx, dy, dz = abs(x1-x), abs(y1-y), abs(z1-z)
+            dst_distance_square = dx**2+dy**2+dz**2
+            inaccuracy = self.inaccuracy
+            if dst_distance_square < inaccuracy:
+                AIManagerBlackboard.set_status_reaching_dst_target(i, True)
+            else:
+                distance_vector = np.array([x-x1, y-y1, z-z1])
+                length_distance_vector = np.linalg.norm(distance_vector)
+                k = self.P / length_distance_vector
 
+                project_x = (x - x1) * k
+                project_y = (y - y1) * k
+                project_z = (z - z1) * k
 
+                ax1 = 1500 + project_x
+                ax2 = 1500 + project_y
+                ax3 = 1500 + project_z
+                ax4 = 0
 
+                if i in self.amount_car:
+                    self.store[i].ax1 = round(ax1)
+                    self.store[i].ax2 = round(ax2)
+                    self.store[i].ax3 = ax4
+                else:
+                    self.store[i].ax1 = round(ax1)
+                    self.store[i].ax2 = round(ax2)
+                    self.store[i].ax3 = round(ax3)
+                    self.store[i].ax4 = ax4
 
+    def __set_cargo_status_for_players(self, is_cargo: list):
+        for i in self.my_position:
+            AIManagerBlackboard.set_status_has_cargo(i, is_cargo[i])
 
+    def check_has_is_keeper(self):
+        statuses_keeper = []
+        for i in self.my_position:
+            statuses_keeper.append(AIManagerBlackboard.get_is_keeper_idx_status(i))
+        return any(statuses_keeper)
 
+    def check_has_cargo(self):
+        statuses_has_cargo = []
+        for i in self.my_position:
+            statuses_has_cargo.append(AIManagerBlackboard.get_has_cargo_idx_status(i))
+        return any(statuses_has_cargo)
 
-
-    '''
-
-
-    @staticmethod
-    def set_unable_node():
-        node = np.random.randint(0, 99)
-        typ = random.choice(('friendly', 'unfriendly'))
-        return node, typ
-
-
-
-    @classmethod
-    def __evaluate_distance_between_object(cls, currents_position) -> bool:
-        points = np.array(currents_position, dtype=np.float32)
-        dist_matrix = np.linalg.norm(points[:, np.newaxis, :] - points[np.newaxis, :, :], axis=2)
-
-        for i in range(len(dist_matrix)):
-            for j in range(len(dist_matrix[i])):
-                if i != j:
-                    if dist_matrix[i][j] < 0.5:
-                        return False
-        return True
-
-
-    @classmethod
-    def is_safe(cls, currents_position):
-        if cls.__evaluate_distance_between_object(currents_position):
-            return
-        else:
-            # Логика изменения координат
-            print("situation not safe")
-
-
-
-    '''
 

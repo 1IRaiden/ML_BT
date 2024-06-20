@@ -53,7 +53,7 @@ class Agent:
 
         action_take_cargo = TakeCargo('take', self.game_obj)
         action_give_cargo = GiveCargo('give', self.game_obj)
-        action_recharge = Recharge('recharge')
+        action_recharge = Recharge('recharge', self.game_obj)
 
         action_stop = Stop('stop', self.game_obj)
         action_stop_1 = Stop('stop_1', self.game_obj)
@@ -64,6 +64,9 @@ class Agent:
         action_order_behaviour = Parallel(name="action_order_behaviour",
                                           policy=common.ParallelPolicy.SuccessOnSelected([action_movement]),
                                           children=[action_movement, action_attack])
+
+        action_order_movement_r = Sequence("movement_recharge", memory=True)
+        action_order_movement_r.add_children([action_order_behaviour, action_recharge])
 
         # Get plan action for take_cargo
         action_cargo_take = Sequence(name='cargoTake', memory=True)
@@ -93,7 +96,7 @@ class Agent:
         # choice strategy
         action_choice_strategy = Selector(name="choice_strategy", memory=True, children=[
             action_cargo_order,
-            action_order_behaviour])
+            action_order_movement_r])
 
         root = Sequence(name="sequence", memory=True)
 
@@ -121,7 +124,7 @@ class Agent:
 
         action_take_cargo = TakeCargoDr('take', self.game_obj)
         action_give_cargo = GiveCargoDr('give', self.game_obj)
-        action_recharge = Recharge('recharge')
+        action_recharge = RechargeDr('rechargeDr', self.game_obj)
 
         action_stop = Stop('stop', self.game_obj)
         action_stop_1 = Stop('stop_1', self.game_obj)
@@ -136,7 +139,7 @@ class Agent:
         action_landing_cargo = Landing("landing_end", drone=self.game_obj)
 
         # this parameter will realise in future
-        action_takeoff_recharge = Landing("takeoff_recharge", drone=self.game_obj)
+        action_landing_recharge = Landing("landing_recharge", drone=self.game_obj)
 
         blocked = BlockedDr("block", self.game_obj)
 
@@ -147,7 +150,7 @@ class Agent:
 
         # Перед движением в воздухе необходимо взлететь:
         action_start_movement = Sequence("takeoff and checking", memory=True)
-        action_start_movement.add_children([action_order_behaviour])
+        action_start_movement.add_children([action_order_behaviour, action_landing_recharge, action_recharge])  ##2
 
         # Get plan action for take_cargo
         action_cargo_take = Sequence(name='cargoTake', memory=True)
@@ -189,6 +192,7 @@ class Agent:
             blocked,
             action_takeoff_start,
             action_choice_strategy,
+
         ])
         return root
 

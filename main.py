@@ -57,8 +57,7 @@ if __name__ == "__main__":
     ai.set_main_status_for_game_object(my_positions_ids)
 
     behaviour = AIBehaviour(core, my_positions_ids)
-    behaviour.start_behaviour(data)
-    time.sleep(100)
+    behaviour.set_amounts_parameters(pioneer_index, cars_index)
 
     # Initialization 2D map
     if Agent.HAS_CARS_IN_GAMES:
@@ -103,6 +102,11 @@ if __name__ == "__main__":
             agents.append(agent)
             thread = threading.Thread(target=agent.start_tick)
             threads.append(thread)
+
+    beh = threading.Thread(target=behaviour.start_behaviour, args = (data,))
+    beh.start()
+
+    # check :: AIManagerBlackboard.set_keeper_status(9, True)
 
     for thread in threads:
         thread.start()

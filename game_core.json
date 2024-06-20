@@ -280,7 +280,7 @@
                             "health": 100,
                             "is_cargo": false,
                             "is_shooting": false,
-                            "num_bullet": 3,
+                            "num_bullet": 0,
                             "state": 0
                         },
                         "home_pos": [
@@ -296,8 +296,8 @@
                     },
                     {
                         "current_pos": [
-                            20,
-                            20,
+                            4,
+                            4,
                             0,
                             0
                         ],
@@ -334,7 +334,7 @@
             {
                 "current_pos": [
                     0.4,
-                    -2.52,
+                    2.52,
                     0.0,
                     0
                 ],
@@ -516,7 +516,7 @@
             {
                 "current_pos": [
                     4.35,
-                    -0.2,
+                    0.2,
                     0.0,
                     0
                 ],

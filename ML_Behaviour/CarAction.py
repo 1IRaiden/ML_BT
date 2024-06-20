@@ -7,6 +7,7 @@ from py_trees.common import Status
 from py_trees import common
 from ML_BT.ML_Behaviour.BTAgents import AIManagerBlackboard
 from ML_BT.SystemNavigation.Navigation import BuildNavMap2D, FindNavPath
+from ML_BT.Config import IF_FORWARD
 
 
 # This code get manage by car
@@ -50,7 +51,6 @@ ode reaches the SUCCESS or FAILURE state. If the child node terminates,
     result = reader.get(name="is_keeper_key")
     result = reader.is_keeper_key       
 '''
-
 # this scripts has not solution using web protocol it is issue future
 
 
@@ -69,7 +69,8 @@ class Initiate(Behaviour):
         self.game_car = car
 
     def update(self):
-        self.game_car.set_connection('localhost', f'{8000 + self.game_car.id}')
+        if IF_FORWARD:
+            self.game_car.set_connection('localhost', f'{8000 + self.game_car.id}')
         time.sleep(1)
         return Status.SUCCESS
 
@@ -83,11 +84,22 @@ class Movement(Behaviour, Nav):
         self.src = 1
         self.dst = None
         self.real_dst = None
+        self.recharge = False
 
     def update(self):
+        print(f"[logger:: {self.game_car.id} :: Movement]: Change on status movement car")
         if not self.dst:
-            print("I'm here")
-            dst = np.random.randint(0, 99)
+            # get information about station
+            if AIManagerBlackboard.get_recharge_idx_status(self.game_car.id):
+                print(f"[logger:: {self.game_car.id}:: Movement]: Drone prepare fly to station recharge")
+                # free recharge? Пусть будет станция 0:
+                dst = AIManagerBlackboard.get_recharge_position_station(1)
+                dst = BuildNavMap2D.get_number_node_from_position(dst[:-1])
+                self.recharge = True
+            else:
+                dst = np.random.randint(0, 99)
+                self.recharge = False
+
             way = FindNavPath.find_path_A(self.map, self.src, dst)
             self.src = dst
             position = BuildNavMap2D.get_coordinate_path(self.map, way)
@@ -95,6 +107,7 @@ class Movement(Behaviour, Nav):
             self.real_dst = position.copy()
 
         if AIManagerBlackboard.get_is_keeper_idx_status(self.game_car.id):
+            print(f"[logger:: {self.game_car.id} :: Movement]: Change on status movement_to_target - car")
             return Status.SUCCESS
 
         start_time = time.time()
@@ -102,14 +115,28 @@ class Movement(Behaviour, Nav):
         for i, pos in enumerate(self.dst):
             if status_blocked(self.game_car.id):
                 return Status.FAILURE
-            self.game_car.move_for_target(self.game_car.id, pos[0], pos[1])
-            idx_max = i
-            end_time = time.time()
-            if (end_time - start_time) > self.time_movement:
-                break
+            AIManagerBlackboard.set_dst_position_idx(self.game_car.id, (pos[0], pos[1], 0))
+            if IF_FORWARD:
+                self.game_car.move_for_target(self.game_car.id, pos[0], pos[1])
+                idx_max = i
+                end_time = time.time()
+                if (end_time - start_time) > self.time_movement:
+                    break
+            else:
+                time.sleep(1)
+                if AIManagerBlackboard.get_status_reaching_dst_target(self.game_car.id):
+                    AIManagerBlackboard.set_status_reaching_dst_target(self.game_car.id, False)
+                    idx_max = i
+                    end_time = time.time()
+                    if (end_time - start_time) > self.time_movement:
+                        break
 
         self.real_dst = self.real_dst[idx_max + 1:]
         self.dst = self.real_dst.copy()
+
+        if not self.dst:
+            if self.recharge:
+                return Status.SUCCESS
 
         return Status.RUNNING
 
@@ -119,12 +146,14 @@ class MoveToTarget(Behaviour, Nav):
         Behaviour.__init__(self, name=name)
         Nav.__init__(self, nav_map=graph_map)
         self.game_car = car
-        self.src = [0, 0]
+        self.src = AIManagerBlackboard.get_home_position(self.game_car.id)
         self.dst = None
         self.target_position = None
 
     def update(self) -> common.Status:
         if not AIManagerBlackboard.get_is_keeper_idx_status(self.game_car.id):
+            print(f"[logger:: {self.game_car.id} :: MoveToTarget]: Happen mistake and car turn in up coincide")
+            print(f"[logger:: {self.game_car.id} :: MoveToTarget]: Status cancel for")
             return Status.FAILURE
 
         src = None
@@ -132,9 +161,10 @@ class MoveToTarget(Behaviour, Nav):
         if not self.dst:
             if not AIManagerBlackboard.get_has_cargo_idx_status(self.game_car.id):
                 self.target_position = AIManagerBlackboard.get_box_reward_position()[:-1]
+                print(f"[logger:: {self.game_car.id} :: MoveToTarget]: For car get box position", self.target_position)
             else:
                 self.target_position = AIManagerBlackboard.get_home_position(self.game_car.id)
-                print("target position", self.target_position)
+                print(f"[logger:: {self.game_car.id} :: MoveToTarget]: For car get home position", self.target_position)
 
             src = BuildNavMap2D.get_number_node_from_position(self.src)
             dst = BuildNavMap2D.get_number_node_from_position(self.target_position)
@@ -148,9 +178,18 @@ class MoveToTarget(Behaviour, Nav):
             for i, pos in enumerate(self.dst):
                 if status_blocked(self.game_car.id):
                     return Status.FAILURE
-                self.game_car.move_for_target(self.game_car.id, pos[0], pos[1])
-                self.src = (pos[0], pos[1])
-            self.dst = []
+                AIManagerBlackboard.set_dst_position_idx(self.game_car.id, (pos[0], pos[1], 0))
+                if IF_FORWARD:
+                    self.game_car.move_for_target(self.game_car.id, pos[0], pos[1])
+                    self.src = (pos[0], pos[1])
+                else:
+                    while not AIManagerBlackboard.get_status_reaching_dst_target(self.game_car.id):
+                        time.sleep(1)
+                        print(f"[logger:: {self.game_car.id} :: MoveToTarget]: Car try get into destination")
+                        # break
+                    AIManagerBlackboard.set_status_reaching_dst_target(self.game_car.id, False)
+
+                self.dst = []
             return Status.SUCCESS
 
 
@@ -162,7 +201,8 @@ class Stop(Behaviour):
     def update(self):
         if status_blocked(self.game_car.id):
             return Status.FAILURE
-        time.sleep(2)
+        print(f"[logger:: {self.game_car.id} :: Stop]: Car {self.game_car.id} change state")
+        time.sleep(1)
         return Status.SUCCESS
 
 
@@ -177,11 +217,10 @@ class Attack(Behaviour):
             return Status.FAILURE
         self.amount_patrons = AIManagerBlackboard.get_amount_patrons_idx(self.game_car.id)
         if AIManagerBlackboard.get_attack_idx_status(self.game_car.id):
-            if self.amount_patrons > 0 :
-                print(f"Машинка {self.game_car.id} совершает удачную атаку")
+            if self.amount_patrons > 0:
+                print(f"[logger:: {self.game_car.id} :: Attack]:  Машинка совершает удачную атаку")
             else:
-                print(f"Машинка {self.game_car.id} не способна удачную атаку")
-                AIManagerBlackboard.set_status_need_recharge(self.game_car.id, True)
+                print(f"[logger:: {self.game_car.id} :: Attack]: Машинка не способна удачную атаку")
 
         return Status.SUCCESS
 
@@ -195,8 +234,19 @@ class TakeCargo(Behaviour):
         time.sleep(1)
         if status_blocked(self.game_car.id):
             return Status.FAILURE
-        print('Cargo is taken')
-        AIManagerBlackboard.set_status_has_cargo(self.game_car.id, True)
+
+        AIManagerBlackboard.set_take_cargo_status_idx(self.game_car.id, True)
+        print(f"[logger:: {self.game_car.id} :: TakeCargo]: Set new status for can take cargo")
+        while not AIManagerBlackboard.get_has_cargo_idx_status(self.game_car.id):
+            time.sleep(1)
+            if not AIManagerBlackboard.get_is_keeper_idx_status(self.game_car.id):
+                print(f"[logger:: {self.game_car.id} :: TakeCargo]: my status was cancel --> Movement")
+                return Status.FAILURE
+
+            # break
+        AIManagerBlackboard.set_take_cargo_status_idx(self.game_car.id, False)
+        # AIManagerBlackboard.set_status_has_cargo(self.game_car.id, True)
+        print(f"[logger:: {self.game_car.id} :: TakeCargo]: Cargo success taken car state changed")
         return Status.SUCCESS
 
 
@@ -209,20 +259,32 @@ class GiveCargo(Behaviour):
         time.sleep(1)
         if status_blocked(self.game_car.id):
             return Status.FAILURE
-        print('Cargo is given')
-        AIManagerBlackboard.set_status_has_cargo(self.game_car.id, False)
+
+        AIManagerBlackboard.set_give_cargo_status_idx(self.game_car.id, True)
+        print(f"[logger:: {self.game_car.id} :: GiveCargo]: Set new status for can give cargo")
+
+        while not AIManagerBlackboard.get_has_cargo_idx_status(self.game_car.id):
+            # AIManagerBlackboard.set_status_has_cargo(self.game_car.id, False)
+            time.sleep(1)
+        AIManagerBlackboard.set_keeper_status(self.game_car.id)
+        print(f"[logger:: {self.game_car.id} :: GiveCargo]: Cargo success give car state changed must start new round")
         return Status.SUCCESS
 
 
 class Recharge(Behaviour):
-    def __init__(self, name):
+    def __init__(self, name, car: Car):
         super().__init__(name)
         self.time_recharge = 30
+        self.game_car = car
 
     def update(self):
         time.sleep(1)
+        print(f"[logger:: {self.game_car.id}:: Recharge]: Car prepare for to recharge")
         self.time_recharge -= 1
         if self.time_recharge <= 0:
+            while AIManagerBlackboard.get_recharge_idx_status(self.game_car.id):
+                time.sleep(0.2)
+            print(f"[logger:: {self.game_car.id}:: RechargeDr]: Recharge is finished")
             return Status.SUCCESS
         else:
             return Status.RUNNING
@@ -235,10 +297,9 @@ class Blocked(Behaviour):
         self.car = car
 
     def update(self):
-        print("Im gere")
         status = AIManagerBlackboard.get_blocked_status_idx(self.car.id)
         if status:
-            print("Blocked")
+            print(f"[log ger:: {self.car.id} :: Blocked]: game car is blocked on 30 second")
             time.sleep(30)
 
         return Status.SUCCESS

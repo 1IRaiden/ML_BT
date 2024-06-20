@@ -14,6 +14,8 @@ class BuildNavMap2D:
         self.colors = []    
         self.edges = []
         self.position = {}
+        self.Y_MIN = -4
+        self.X_MIN = -4
 
     # Get empty graph
     @staticmethod
@@ -192,6 +194,9 @@ class BuildNavMap3D:
         self.colors = []
         self.edges = []
         self.position = {}
+        self.Y_MIN = -4
+        self.X_MIN = -4
+        self.Z_MIN = 0
 
         # Get empty graph
 
@@ -264,7 +269,6 @@ class BuildNavMap3D:
         a = round(pos[0])
         b = round(pos[1])
         c = round(pos[2])
-        print(a, b, c)
         node = BuildNavMap3D.position[(a, b, c)]
         return node
 
