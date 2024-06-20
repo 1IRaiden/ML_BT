@@ -10,18 +10,10 @@ from ML_BT.SystemNavigation.Navigation import BuildNavMap2D, FindNavPath
 from ML_BT.Config import IF_FORWARD
 
 
-# This code get manage by car
 '''
-    Main Action for car:
-- Attack
-- Movement
-- Recharge
-- MovementToTarget
-- Stop
-- TakeCargo
-- GiveCargo 
+=====================
+    О декораторах: 
 
-    Decorators:
 1. de.OneShot - Executes the child node until the first successful completion, after which it always returns SUCCESS,
     preventing the child node from being executed again.
 2. de.Condition- The Condition decorator executes the child node and converts the status to SUCCESS
@@ -38,30 +30,45 @@ ode reaches the SUCCESS or FAILURE state. If the child node terminates,
   the decorator returns FAILURE.
 8.de.Timeout - The Timeout decorator wraps a child node and aborts its execution if it exceeds the specified time limit.
  If the time expires, the decorator returns FAILURE, otherwise it is the result of the execution of the child node.
-'''
 
-'''
-    Features of working with blackboard:
-    1. Registration:
+===============================
 
-    reader = Client(name='K')
-    reader.register_key(key="is_keeper_key", access=common.Access.READ)
-
-    2. Referring to the result:
-    result = reader.get(name="is_keeper_key")
-    result = reader.is_keeper_key       
+Поговорим об основных дейсвиях машинках:
+    - Attack
+    - Movement
+    - Recharge
+    - MovementToTarget
+    - Stop
+    - TakeCargo
+    - GiveCargo 
+    - Blocking
+    - Initiate
+Их особенности будет представлены ниже перед описанием каждого из класса...
 '''
-# this scripts has not solution using web protocol it is issue future
 
 
 def status_blocked(idx):
     return AIManagerBlackboard.get_blocked_status_idx(idx)
 
 
+""" 
+==============================
+class Nav позволяет задать поведение по умолчанию для классов наследников,
+то есть задать навигационую карту для иных дейсвий которые будут 
+требовать взаимодейсвия с ней
+"""
+
+
 class Nav:
     def __init__(self, nav_map):
         self.map = nav_map
 
+
+"""
+Класс Initiate определяет будет ли дрон или машинка активной для агента (об агентах будет рассказано в другом скрипте)
+** Требует дописать логику которая будет определять его активность - один из способов это сделать - 
+исследовать текущие координаты машинки, насколько мне известно при неактивности машинки координаты будут крайне большие
+"""
 
 class Initiate(Behaviour):
     def __init__(self, name, car: Car):
@@ -73,6 +80,15 @@ class Initiate(Behaviour):
             self.game_car.set_connection('localhost', f'{8000 + self.game_car.id}')
         time.sleep(1)
         return Status.SUCCESS
+
+
+"""
+Класс Movement определяет хаотичное движение тела. Как было сказано ранее в каких-то дейсвиях необходима навигационная карта.
+Основная задача этого действия получить начальное положение и конечное положение и получить от класса BuildNavMap2D 
+путь через вершина которого необходимо двигаться. Так же этот класс проверяет достиг ли объект конечного своего состояния или нет
+Каждый промежуток времени time_movement происходит прерывание маршрута и данные маршрута изменяются. Так же только этот класс может заставить машинку
+поехать на станцию перезарядки 
+"""
 
 
 class Movement(Behaviour, Nav):
@@ -87,6 +103,8 @@ class Movement(Behaviour, Nav):
         self.recharge = False
 
     def update(self):
+        # self.src = AIManagerBlackboard.get_current_position_idx(self.game_car.id)
+        # self.src = BuildNavMap2D.get_number_node_from_position(self.src)
         print(f"[logger:: {self.game_car.id} :: Movement]: Change on status movement car")
         if not self.dst:
             # get information about station
@@ -140,6 +158,12 @@ class Movement(Behaviour, Nav):
 
         return Status.RUNNING
 
+"""
+Реализация этого дейсвия похожа на реализацию просто действия Movement - разница в том, 
+что здесь назначается вполне конечная физическая точка, или позиция коробки или позиция домашней стартовой площадки
+Так же здесь тело не испытывает прерывания маршрута, а просто пытается достич его до последнего
+"""
+
 
 class MoveToTarget(Behaviour, Nav):
     def __init__(self, name, car: Car, graph_map):
@@ -192,6 +216,8 @@ class MoveToTarget(Behaviour, Nav):
                 self.dst = []
             return Status.SUCCESS
 
+"""Этот класс большой логикой не обладает, его задача просто добавить задержку, если будет вознать проблема при движении"""
+
 
 class Stop(Behaviour):
     def __init__(self, name, car: Car):
@@ -204,6 +230,12 @@ class Stop(Behaviour):
         print(f"[logger:: {self.game_car.id} :: Stop]: Car {self.game_car.id} change state")
         time.sleep(1)
         return Status.SUCCESS
+
+
+"""
+Класс Attack как и любой другой класс создан для логирования статуса атаки, 
+он позволяет отлеживать логику и статус каждой машинки
+"""
 
 
 class Attack(Behaviour):
@@ -223,6 +255,12 @@ class Attack(Behaviour):
                 print(f"[logger:: {self.game_car.id} :: Attack]: Машинка не способна удачную атаку")
 
         return Status.SUCCESS
+
+"""
+Класс takeCargo следит за тем, чтобы дать команду машинке драть груз, предварительно проверяя статусы дейсвительно ли машинка является той,
+которая должна взять груз в случае неудачи будет выдан результат Failure. Данная логика реализована через blackboard 
+О blackboard будет расскахано отдельно
+"""
 
 
 class TakeCargo(Behaviour):
@@ -250,6 +288,12 @@ class TakeCargo(Behaviour):
         return Status.SUCCESS
 
 
+"""
+Класс GiveCargo следит за тем, чтобы дать команду машинке отдать груз, данный класс устанавливает и разрешает машине дать команду на отдачу груза
+Данная логика реализована через blackboard О blackboard будет расскахано отдельно
+"""
+
+
 class GiveCargo(Behaviour):
     def __init__(self, name, car):
         super().__init__(name)
@@ -271,6 +315,9 @@ class GiveCargo(Behaviour):
         return Status.SUCCESS
 
 
+"Класс Recharge - отвечает за перезарядку Дрона, то есть позволяет грузу сделать перезарядку"
+
+
 class Recharge(Behaviour):
     def __init__(self, name, car: Car):
         super().__init__(name)
@@ -278,6 +325,9 @@ class Recharge(Behaviour):
         self.game_car = car
 
     def update(self):
+        if status_blocked(self.game_car.id):
+            return Status.FAILURE
+
         time.sleep(1)
         print(f"[logger:: {self.game_car.id}:: Recharge]: Car prepare for to recharge")
         self.time_recharge -= 1
@@ -288,6 +338,11 @@ class Recharge(Behaviour):
             return Status.SUCCESS
         else:
             return Status.RUNNING
+
+"""
+Статус для этого класса проверяет на протяжении всех действий, если параметр blocked = True, то тогда
+дерево попадет сюда 
+"""
 
 
 class Blocked(Behaviour):

@@ -1,5 +1,4 @@
 import threading
-import time
 import json
 from ML_Behaviour.creatingBT import Agent
 from ML_BT.SystemNavigation.ManagerMovement import AIBehaviour
@@ -10,29 +9,34 @@ from Config import AMOUNT_CAR, ALL_AI_OBJECT, TypeObject
 from ML_BT.Web_Core.Requester import Core, Researcher
 
 
+# Ссылки на навигационную карту 2D и 3D
 graph_map = None
 graph_map_3d = None
 
 
 if __name__ == "__main__":
-    # Interactive with web game server and get main data for create game
+    # Класс Core позволяет взаимодейсвовать с сервером и отпрпавлять ему команды - в результате мы будет получать json данные
     core = Core()
+
+    # Простейшая черная доска для записи и синхронизации переменных состояниях
     ai = AIManagerBlackboard()
 
+    # Мои данные для теста и отслеживания состояниях при различных значениях переменных
     path = 'game_core.json'
     my_commands = 'Red'
 
     with open(path, 'r') as file:
         data = json.load(file)
 
+    # В данный момент мы получаем все данные
     home_positions, my_positions_ids, recharge_position, types_object = Researcher.get_config_information(data,
                                                                                                           my_commands)
-
     round_home_position = []
     for home_position in home_positions:
         x, y, z = home_position
         round_home_position.append([round(x), round(y), round(z)])
 
+    # Получаем данные о кол-ве дронов и машинок
     cars_index = []
     pioneer_index = []
     for i, typ in enumerate(types_object):
@@ -56,6 +60,7 @@ if __name__ == "__main__":
     ai.set_status_all_drone_landing(pioneer_index)
     ai.set_main_status_for_game_object(my_positions_ids)
 
+    # В данный момент главный класс, который будет описывать логику игры исходях полученныз данных в json
     behaviour = AIBehaviour(core, my_positions_ids)
     behaviour.set_amounts_parameters(pioneer_index, cars_index)
 
@@ -87,6 +92,8 @@ if __name__ == "__main__":
     threads = []
 
     # Creation game_object : drones and cars
+    # Так же здесь создаются агенты - именно они создают деревья поведения и воспроизводят тики для перехода из одного состояния в другое
+    # 2d agent
     if Agent.HAS_CARS_IN_GAMES:
         for number_car in range(AMOUNT_CAR):
             car = Car(cars_index[number_car])
@@ -95,6 +102,7 @@ if __name__ == "__main__":
             thread = threading.Thread(target=agent.start_tick)
             threads.append(thread)
 
+    # 3d agent
     if Agent.HAS_DRONE_IN_GAME:
         for number_drone in range(amount_drone):
             drone = Drone(pioneer_index[number_drone])
@@ -103,11 +111,11 @@ if __name__ == "__main__":
             thread = threading.Thread(target=agent.start_tick)
             threads.append(thread)
 
+    # Создаем поток для упралвения игровой логикой
     beh = threading.Thread(target=behaviour.start_behaviour, args = (data,))
     beh.start()
 
-    # check :: AIManagerBlackboard.set_keeper_status(9, True)
-
+    # Запускаем всех агентов
     for thread in threads:
         thread.start()
 

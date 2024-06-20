@@ -2,21 +2,30 @@ from py_trees import blackboard
 import typing
 
 ''' 
-This class is needed to synchronize data on the blackboard, 
-since during the game we need to know about all the states of game objects
+Этот класс определяет и следит за установкой значений на черной доске а так же полностью управляет переменными состояния
 
 main parameters: 
-1. is_keeper{amount_agents_car}_box
-2. attack{amount_agents_car}
-3. has_cargo{amount_agents_car}
-4. need_recharge{amount_agents_car}
-5. free_recharge{1}
-6. amount_patrons{amount_agents_car}
-7. dst{amount_agents_car}
-9. pos_box{number}
-10. car_start_position{number}
-11. reward_box{i}
+1. is_keeper{idx}_box -- является ли игровой объект тем, которому разрешено брать груз или нет
+True = да, False - Not 
+2. attack{idx} -- может ли игровой объект атаковать 
+3. has_cargo{idx} -- имеет ли игровой объект груз или нет
+4. need_recharge{idx} -- нужна ли игровому объекту перезарядка или не нужн
+5. free_recharge{1}  -- ?? свободна ли станция (неизвестно имеется или нет)
+6. amount_patrons{idx}  -- кол-во патронов у игрового объекта
+7. dst{idx} -- назначение пункта назначения у игрового объекта 
+9. pos_box{idx} -- позиция коробко для награды 
+10. "is_landing{idx}" -- имеется ли статус посадки у дрона
+11. "take_cargo{idx}" -- нужно ли брать игровому объекту груз или нет
 12. car_current_position{i}
+13. "is_blocked{idx}" - заблокирован ли игровой объект 
+14. "dst_position_obj_reached{idx}" - достиг ли игровой объект точку
+15. "give_cargo{idx}" - нужно ли брать игровому объекту отдавать груз 
+16. "current_position{idx}" -- текущая позиция дрона
+17. obj_position{idx}" -- домашняя позиция игрового обхекта (координаты его стартовой площадки)
+18. "need_takeoff{idx}" -- нужно ли взлетать дрону или нет 
+19. "need_land{idx}" -- нужно ли совершать посадку
+20. "recharge_position_station{idx}" -- позиция площадки перезарядкии
+21. "box_reward_position" - позиция награды коробочки
 '''
 
 
@@ -45,12 +54,6 @@ class AIManagerBlackboard:
     def add_home_position(cls, my_positions_ids, home_positions):
         for idx, home_pos in zip(my_positions_ids, home_positions):
             cls._instance.writer.set(variable_name=f"obj_position{idx}", value=home_pos)
-
-    @classmethod
-    def read_recharge_position(cls):
-        pos_a = cls._instance.writer.get("pos_recharge1")
-        pos_b = cls._instance.writer.get("pos_recharge2")
-        return pos_a, pos_b
 
     @classmethod
     def __get_home_position_all(cls, my_positions_ids):
@@ -91,8 +94,6 @@ class AIManagerBlackboard:
     @classmethod
     def set_status_all_drone_landing(cls, idx_drones):
         for idx in idx_drones:
-            # cls._instance.writer.set(variable_name=f"is_landing{idx}", value=False)
-            # cls._instance.writer.set(variable_name=f"is_landing{idx}", value=False)
             cls._instance.writer.set(variable_name=f"need_takeoff{idx}", value=False)
             cls._instance.writer.set(variable_name=f"need_land{idx}", value=False)
 

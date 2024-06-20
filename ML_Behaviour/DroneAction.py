@@ -13,10 +13,23 @@ def status_blocked(idx):
     status = AIManagerBlackboard.get_blocked_status_idx(idx)
     return status
 
+""" 
+==============================
+class Nav3D позволяет задать поведение по умолчанию для классов наследников,
+то есть задать навигационую карту для иных дейсвий которые будут 
+требовать взаимодейсвия с ней
+"""
+
 
 class Nav3D:
     def __init__(self, nav_map):
         self.map = nav_map
+
+"""
+Класс Initiate определяет будет ли дрон или машинка активной для агента (об агентах будет рассказано в другом скрипте)
+** Требует дописать логику которая будет определять его активность - один из способов это сделать - 
+исследовать текущие координаты дроны, насколько мне известно при неактивности машинки координаты будут крайне большие
+"""
 
 
 class InitiateDr(Behaviour):
@@ -73,6 +86,15 @@ class Landing(Behaviour):
             print(f"[logger:: {self.drone.id}:: Landing]: set new status -- drone must land")
         return Status.SUCCESS
 
+"""
+Класс MovementDr определяет хаотичное движение тела. Как было сказано ранее в каких-то дейсвиях необходима навигационная карта.
+Основная задача этого действия получить начальное положение и конечное положение и получить от класса BuildNavMap3D 
+путь через вершина которого необходимо двигаться. Так же этот класс проверяет достиг ли объект конечного своего состояния или нет
+Каждый промежуток времени time_movement происходит прерывание маршрута и данные маршрута изменяются
+Так же только этот класс может заставить дрон лететь на станцию перезарядки. Так же этот класс проверяет находится ли дрон в полете или нет
+** Возможно требует обработка ошибок, но на данный момент мне не удалось ниразу проверить это на практике 
+"""
+
 
 class MovementDr(Behaviour, Nav3D):
     def __init__(self, name, drone: Drone, graph_map):
@@ -86,31 +108,38 @@ class MovementDr(Behaviour, Nav3D):
         self.recharge = False
 
     def update(self):
+        # Получаем текущие координаты с черной доски
         self.src = AIManagerBlackboard.get_current_position_idx(self.drone.id)
         print(f"[logger:: {self.drone.id} :: MovementDr]: Movement")
         # check :: AIManagerBlackboard.set_takeoff_status_drone(self.drone.id, False)
+        # Ждем пока дрон взлетит ...
         while AIManagerBlackboard.get_takeoff_status_drone(self.drone.id):
             time.sleep(0.3)
         print(f"[logger:: {self.drone.id} :: MovementDr]: Drone fly")
 
+        # Получаем номер узла с такими координатами
         self.src = BuildNavMap3D.get_number_node_from_position(self.src)
+
+        # Если путь не назначен
         if not self.dst:
             # get information about station
             if AIManagerBlackboard.get_recharge_idx_status(self.drone.id):
                 print(f"[logger:: {self.drone.id}:: Movement]: Drone prepare fly to station recharge")
-                # free recharge? Пусть будет станция 1:
+                # free recharge? Пусть будет станция 1, к примеру:
                 dst = AIManagerBlackboard.get_recharge_position_station(1)
                 dst = BuildNavMap3D.get_number_node_from_position(dst)
                 self.recharge = True
             else:
                 dst = np.random.randint(0, 6*6*6)
                 self.recharge = False
+            # Находим путь
             way = FindNavPath.find_path_A_3D(self.map, self.src, dst)
             self.src = dst
             position = BuildNavMap3D.get_coordinate_path(self.map, way)
             self.dst = position
             self.real_dst = position.copy()
 
+        # Если дрон выбран на забирание груза, то он покинет этот состояние
         if AIManagerBlackboard.get_is_keeper_idx_status(self.drone.id):
             print(f"[logger:: {self.drone.id}:: Movement]: Change on status movement_to_target - drone")
             return Status.SUCCESS
@@ -144,6 +173,13 @@ class MovementDr(Behaviour, Nav3D):
                 return Status.SUCCESS
 
         return Status.RUNNING
+
+"""
+Реализация MoveToTargetDr похожа на реализацию просто действия MovementDr - разница в том, 
+что здесь назначается вполне конечная физическая точка, или позиция коробки или позиция домашней стартовой площадки
+Так же здесь тело не испытывает прерывания маршрута, а просто пытается достич его до последнего
+"""
+
 
 
 class MoveToTargetDr(Behaviour, Nav3D):
@@ -206,6 +242,9 @@ class MoveToTargetDr(Behaviour, Nav3D):
             return Status.SUCCESS
 
 
+"""Этот класс большой логикой не обладает, его задача просто добавить задержку, если будет вознать проблема при движении"""
+
+
 class StopDr(Behaviour):
     def __init__(self, name, drone: Drone):
         super().__init__(name)
@@ -217,6 +256,12 @@ class StopDr(Behaviour):
         print(f"[logger:: {self.drone.id} :: StopDr]: Drone {self.drone.id} change state")
         time.sleep(1)
         return Status.SUCCESS
+
+
+"""
+Класс AttackDr как и любой другой класс создан для логирования статуса атаки, 
+он позволяет отлеживать логику и статус каждого дрона
+"""
 
 
 class AttackDr(Behaviour):
@@ -236,6 +281,12 @@ class AttackDr(Behaviour):
                 print(f"Дрон {self.drone.id} не способна удачную атаку")
 
         return Status.SUCCESS
+
+"""
+Класс TakeCargoDr следит за тем, чтобы дать команду дрону брать руз, предварительно проверяя статусы дейсвительно ли дрон является той,
+которая должна взять груз в случае неудачи будет выдан результат Failure. Данная логика реализована через blackboard 
+О blackboard будет расскахано отдельно. Так же проверяются наличие статуса полетв
+"""
 
 
 class TakeCargoDr(Behaviour):
@@ -266,6 +317,12 @@ class TakeCargoDr(Behaviour):
         return Status.SUCCESS
 
 
+"""
+Класс GiveCargoDr следит за тем, чтобы дать команду дрону отдать груз, данный класс устанавливает и разрешает дрону дать команду на отдачу груза
+Данная логика реализована через blackboard О blackboard будет расскахано отдельно. Отлеживает статус сел ли дрон или нет
+"""
+
+
 class GiveCargoDr(Behaviour):
     def __init__(self, name, drone: Drone):
         super().__init__(name)
@@ -289,6 +346,9 @@ class GiveCargoDr(Behaviour):
         AIManagerBlackboard.set_keeper_status(self.drone.id)
         print(f"[logger:: {self.drone.id} :: GiveCargo]: Cargo success give car state changed must start new round")
         return Status.SUCCESS
+
+
+""" Класс Recharge - отвечает за перезарядку дрона, то есть позволяет грузу сделать перезарядку"""
 
 
 class RechargeDr(Behaviour):
@@ -316,6 +376,13 @@ class RechargeDr(Behaviour):
             return Status.RUNNING
 
 
+"""
+Статус для этого класса проверяет на протяжении всех действий, если параметр blocked = True, то тогда
+дерево попадет сюда 
+** Возможно неучтено состояние блокирования ... К сожалению мне неизвестно как ведет себя дрон или машинка при этом состояния поэтому прописана простейшая реализация
+"""
+
+
 class BlockedDr(Behaviour):
     def __init__(self, name, drone: Drone):
         super().__init__(name)
@@ -328,4 +395,3 @@ class BlockedDr(Behaviour):
             print(f"[logger:: {self.drone.id} :: Blocked]: game car is blocked on 30 second")
             time.sleep(self.time)
         return Status.SUCCESS
-

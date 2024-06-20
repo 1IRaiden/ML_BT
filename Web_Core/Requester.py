@@ -3,6 +3,7 @@ import requests
 from typing import Dict
 
 
+# Класс отправляющий запросы на web_server
 class Core:
     _instance = None
 
@@ -42,6 +43,7 @@ class RechargeStation:
         self.freedom = None
 
 
+# Парсер данных из json файлов в том числе и запросов из интернета
 class Researcher:
     @staticmethod
     def current_position_players(data: Dict):
@@ -153,11 +155,7 @@ class Researcher:
 
 
 
-# path = r'C:\Users\user\Desktop\Проекты\MachineLeaning\MachineLearning\ML_BT\game_core.json'
-# with open(path, 'r') as file:
-#     data =json.load(file)
-#
-# print(Researcher.get_position_cargos(data))
+
 
 
 

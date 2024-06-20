@@ -10,7 +10,12 @@ from collections import Counter
 from dataclasses import dataclass, asdict
 from abc import ABC
 
+'''
+Здесь прописана простейшая логика по который может происходить игра -- в принципе можно кол-во стратегий увеличить или даже усложнить
+Для этого можно использовать паттерн стратегии, но для прописи этих состояний нужна большая бдительность, чтобы не уточнить в переменных состояния'''
 
+
+# Цвета возможных коробочек в игре
 class Colors(Enum):
     color_one = (0, 0, 0)
     color_two = (1, 1, 1)
@@ -28,6 +33,7 @@ class Template(ABC):
         pass
 
 
+# Данные формируемые для парадачи на сервер по дрону (сервер управляет дроном)
 @dataclass
 class Model3D(Template):
     id: int
@@ -44,6 +50,7 @@ class Model3D(Template):
     def set_status_attack(self, status: bool):
         self.status_attack = status
 
+    # Возвращение в значения по умолчанию
     def reset(self):
         self.ax1 = 1500
         self.ax2 = 1500
@@ -51,6 +58,10 @@ class Model3D(Template):
         self.ax4 = 0
         self.status = False
         self.status_attack = False
+
+
+# Данные формируемые для парадачи на сервер по машинке (сервер управляет машинкой)
+# ** даннвй класс нужно будет изменить, я не очень поняд, какие коррдинаты он принимает в себя
 
 
 @dataclass
@@ -76,6 +87,7 @@ class Model2D(Template):
         self.status_attack = False
 
 
+# Главнай класс для взаимодейсвия с деревьями поведения и реальной игрой
 class AIBehaviour:
     _instance = None
 
@@ -85,25 +97,25 @@ class AIBehaviour:
         return cls._instance
 
     def __init__(self, core: Core, my_indexes):
-        self.core = core
+        self.core = core # для запросов на сервер
 
-        self.my_position = my_indexes
-        self.blocked = None
-        self.current_positions = None
-        self.nums_bullets = None
+        self.my_position = my_indexes  # id игровых объектов которыми я управляю
+        self.blocked = None # информации о заблокированных объектах
+        self.current_positions = None # информация о текущих позициях
+        self.nums_bullets = None  # информация о кол-во пуль у игровых объектов
         self.amount_drone = None
         self.amount_car = None
-        self.store : typing.Dict[int, typing.Union[Model2D, Model3D]] = {}
+        self.store : typing.Dict[int, typing.Union[Model2D, Model3D]] = {} # словарь хранящий данные для запросов
 
-        self.attack_radius = 0.5
-        self.amount_box = 3
-        self.inaccuracy = 0.4
-        self.P = 500
+        self.attack_radius = 0.5 # радиус атаки
+        self.amount_box = 3 # кол-во коробок
+        self.inaccuracy = 0.4 # точнось удаленности двух точек
+        self.P = 500 # параметр для преобразования вектора по направлению в вектор по нагрузкам для серверам на двигатель
         self.time = 1
 
         # color chose cargo
-        self.keeper: int = -1
-        self.box: typing.Optional[BoxRegard] = None
+        self.keeper: int = -1 # информация о том кто должен держать грух
+        self.box: typing.Optional[BoxRegard] = None # груз назначенный для игрового ai объекта
 
         self.first = True
 
@@ -111,6 +123,7 @@ class AIBehaviour:
         self.amount_car = amount_car
         self.amount_drone = amount_drone
 
+    # Потоковая функция управляемая игрой
     def start_behaviour(self, data):
         for item in self.amount_car:
             inf = Model2D(item)
@@ -141,6 +154,7 @@ class AIBehaviour:
 
             # logic choose box
             boxs: list[BoxRegard] = Researcher.get_position_cargos(data)
+            # Определяем для игровых объектов своих статусы для атаки а так же получаем массив своих позиций
             self.current_positions = self.determine_attack_status(current_positions, is_blocked, ids)
             self.set_current_position_on_blackboard()
 
@@ -166,7 +180,6 @@ class AIBehaviour:
                                 AIManagerBlackboard.set_landing_status_drone(number_drone, False)
                             else:
                                 self.store[number_drone].set_status(False)
-                            # logic using this parameters ...
                 except Exception as e:
                     print(f"Возникла ошибка {e}")
 
@@ -204,7 +217,6 @@ class AIBehaviour:
             AIManagerBlackboard.set_current_position_idx(idx, self.current_positions[idx])
 
     def determine_attack_status(self, current_position: list, is_blocked: list[bool], ids: list):
-        AIManagerBlackboard.set_status_need_recharge(9, True) ################
         my_coordinates = {}
         enemy_coordinates = {}
 
@@ -235,6 +247,7 @@ class AIBehaviour:
 
         return my_coordinates
 
+    # Определяем расстояния между моими и вражескими объектами и если расстояние маньше чем радиус, то возвращаем пару игровых объектов
     def find_distance_between_game_object(self, my_coordinates: dict, enemy_coordinates: dict):
         indexes_two = []
         for i, my_pos in my_coordinates.items():
@@ -259,6 +272,7 @@ class AIBehaviour:
             self.keeper = idx
             print(f"Назначен дрон с индексом {idx} и груз с цветом {box.color}")
 
+    # Логика выбора груза на основании внешних данных о грузах
     def choice_one_drones(self, box_info: list[BoxRegard]):
         statuses = []
         for box in box_info:
@@ -301,6 +315,7 @@ class AIBehaviour:
             case _:
                 print("Нет свободных грузов")
 
+    # Получаем сортированный словарь где ключ- номер моег объекта -- значение минимальное расстояние до груза
     def find_nearly_game_object_key(self, position_cargo):
         print(self.current_positions)
         distances_xy = {}
@@ -322,10 +337,12 @@ class AIBehaviour:
                 return i
         return None
 
+    # Определяем значения для передачи серверу (для dataclass Model2D или Model3D
     def determine_status_dst_from_game_object(self, currents_positions: list):
         for i in self.my_position:
-            # dst_position = AIManagerBlackboard.get_dst_position_idx(i)
-            dst_position = AIManagerBlackboard.get_home_position(i)
+            dst_position = AIManagerBlackboard.get_dst_position_idx(i)
+            # Тестовая проба для проверки работоспособности
+            # dst_position = AIManagerBlackboard.get_home_position(i)
             x, y, z = dst_position
             x1, y1, z1 = currents_positions[i]
             dx, dy, dz = abs(x1-x), abs(y1-y), abs(z1-z)

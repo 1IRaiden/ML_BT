@@ -1,9 +1,16 @@
 import time
 import networkx as nx
-from matplotlib import pyplot as plt
 import random
 
 
+# Этот код служит для создания навигационной 2D сети
+# ** Проблемы навигационных кар:
+'''
+В данный момент каждая точка описывается координатами (x, y, z) -- оно эти точки не привязаны к реальным координатам
+Необоходимо при создании точек учитывать реальные их координаты
+В данный момент он начинается от 0 с шагом один
+Должно быть примерно от -4.5 до 4.5 -- возможносто стоит внести параметры густоты навигационной сети которая показывает как близко расположены вершины (или с каким шагом)
+'''
 class BuildNavMap2D:
     position = {}
 
@@ -84,13 +91,13 @@ class BuildNavMap2D:
                 graph_map.add_edge(first, second, color='blue', weight=1)
                 i += 1
 
-    # Draw 2d map is Graph
-    def draw_map_2d(self, graph_map, fig):
-        for u, v, data in graph_map.edges(data=True):
-            self.colors.append(data.get('color'))
-        pos = nx.get_node_attributes(graph_map, 'pos')
-        nx.draw(graph_map, pos, with_labels=True, edge_color=self.colors)
-        plt.show()
+    # Draw 2d map is Graph - Используется редко
+    # def draw_map_2d(self, graph_map, fig):
+    #     for u, v, data in graph_map.edges(data=True):
+    #         self.colors.append(data.get('color'))
+    #     pos = nx.get_node_attributes(graph_map, 'pos')
+    #     nx.draw(graph_map, pos, with_labels=True, edge_color=self.colors)
+    #     plt.show()
 
     # This method doing vertices or unavailable or good
     @staticmethod
@@ -104,6 +111,7 @@ class BuildNavMap2D:
         elif typ == 'friendly':
             BuildNavMap2D.__set_weight_edge(graph_map, node, neighbours, weight, 'blue')
 
+    # Изменяет вес ребер
     @staticmethod
     def __set_weight_edge(graph, node, others: list[int], weight, color):
         for other in others:
@@ -117,6 +125,7 @@ class BuildNavMap2D:
         for i in range(0, length_path-1, 1):
             graph_map[get_path[i]][get_path[i + 1]]['color'] = 'red'
 
+    # Возвращает координаты пути через который нужно лететь
     @staticmethod
     def get_coordinate_path(graph_map, way):
         coordinate = []
@@ -125,6 +134,7 @@ class BuildNavMap2D:
             coordinate.append(position)
         return coordinate
 
+    # Файл obstacle заполняется вручную -- данные отсюда увеличивают веса ребер расположенными рядом с позициями
     def find_not_comfortable_node(self, position_obstacles):
         nodes = []
         for pos_obstacles in position_obstacles:
@@ -134,6 +144,7 @@ class BuildNavMap2D:
             nodes.append(node)
         return nodes
 
+    # Позволяет по позиции точки вернуть номер нужной вершины
     @staticmethod
     def get_number_node_from_position(pos: list):
         a = round(pos[0])
@@ -142,6 +153,7 @@ class BuildNavMap2D:
         return node
 
 
+# Этот класс позволяет рассчитать кротайших путь пользуясь nx.astar_path() для 2d и 3d сети
 class FindNavPath:
     def __init__(self):
         pass
@@ -169,20 +181,10 @@ class FindNavPath:
         return path_a_b
 
 
-class Visual:
-    def __init__(self):
-        self.fig, self.ax = plt.subplots()
-        self.ax.grid()
 
-    def update(self, data_x, data_y):
-        self.ax.scatter(data_x, data_y, color = 'r')
-        self.ax.set_xlim(-1, 12)
-        self.ax.set_ylim(-1, 12)
-        plt.draw()
-        plt.pause(0.05)
-        plt.cla()
-
-
+# Почти все тоже самое что и с 2d сетью, только в 3d проблемы похожие
+# ** нужно пересмотреть навигационную сеть, убрать возможнотсь перемещания чисто по z=0(высоте) ибо дрон не имеет колес, он должен летать!
+# ** Нужно ввести густоту навигационной сети и изменить мастаб полета
 class BuildNavMap3D:
     position = {}
 
@@ -205,8 +207,7 @@ class BuildNavMap3D:
         graph = nx.Graph()
         return graph
 
-        # Get position node for graph
-
+    # Get position node for graph
     def __get_position_node(self):
         points = []
         for y in range(0, self.HEIGHT, 1):

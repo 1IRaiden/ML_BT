@@ -6,7 +6,10 @@ from py_trees.composites import Sequence, Parallel, Selector
 from py_trees.trees import BehaviourTree
 import py_trees.decorators as de
 
-
+'''
+Главный класс поведения оторый содежит глабольные переменные и локальные
+По большей части методы класса говорят все сами за себя
+'''
 class Agent:
     reader = AIManagerBlackboard().writer
     nav_map_2d = None
@@ -37,6 +40,7 @@ class Agent:
         if isinstance(self.game_obj, Drone):
             return self.create_behaviour_tree_drone()
 
+    # Для дерева поведения необходимо создать экземпляры самих дейсвий и объединить с помощью Selector и Sequence или Parallel
     def create_behaviour_tree_car(self):
         # Actions
         action_initiate = Initiate("initiate", self.game_obj)
@@ -108,6 +112,7 @@ class Agent:
 
         return root
 
+    # Аналогично описанисанию предыдущего метода
     def create_behaviour_tree_drone(self):
         # Actions
         action_initiate = InitiateDr("initiate", self.game_obj)
@@ -196,6 +201,7 @@ class Agent:
         ])
         return root
 
+    # Начинаем прозиводить тики по дереву поведения
     def start_tick(self):
         try:
             while True:

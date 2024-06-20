@@ -3,7 +3,8 @@ from pioneer_sdk import Pioneer
 from abc import ABC, abstractmethod
 from ML_BT.Vehicle.edubot_sdk import EdubotGCS
 
-
+'''Здесь реализованы классы для прямого взаиомдейсвия с дронами или машинками'''
+# Рекомендую изучить библиотеки pioneer_sdk и EdubotGSC
 class Vehicle(ABC):
     def __init__(self):
         pass
