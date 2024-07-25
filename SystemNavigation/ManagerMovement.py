@@ -187,9 +187,6 @@ class AIBehaviour:
                 self.choice_one_drones(boxs)
                 self.first = not self.first
 
-            # for item in self.my_position:
-            #   print(self.store[item])
-
             if not self.check_has_cargo():
 
                 '''In this case, the freedom of the cargo is checked, taking into account its location, 
